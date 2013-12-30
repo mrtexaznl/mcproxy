@@ -40,8 +40,8 @@ public class HttpServer implements Container  {
         String dataFromWallet;
     }
     
-    public HttpServer() throws MalformedURLException {
-        url = new URL("http", "localhost", 9372, "/");
+    public HttpServer(String hostname, int port) throws MalformedURLException {
+        url = new URL("http", hostname, port, "/");
         
         utils = new RPCUtils(url, "", "");
         
@@ -52,7 +52,7 @@ public class HttpServer implements Container  {
     
     final HashMap<String, SessionStorage> works;
     
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
     
    @Override
    public void handle(Request request, Response response) {
@@ -275,13 +275,68 @@ public class HttpServer implements Container  {
       }
    } 
 
-   public static void main(String[] list) throws Exception {
-      Container container = new HttpServer();
-      Server server = new ContainerServer(container);
-      Connection connection = new SocketConnection(server);
-      SocketAddress address = new InetSocketAddress(8080);
+   public static void main(String[] args) throws Exception {
+       
+       
+        String hostname = "localhost";
+        int port = 9372;
+        
+        String bindAddress = "";
+        int localport = 8080;        
 
-      connection.connect(address);
+        int i = 0;
+
+
+         while (i < args.length) {
+
+             if (args[i].equals("-s")) {
+                 i++;
+                 hostname = args[i];
+             } else if (args[i].equals("-p")) {
+                 i++;
+                 port = Integer.parseInt(args[i]);
+             }  else if (args[i].equals("-b")) {
+                 i++;
+                 bindAddress = args[i];
+             }  else if (args[i].equals("-l")) {
+                 i++;
+                 localport = Integer.parseInt(args[i]);
+             } else if (args[i].equals("-h") || args[i].equals("--help")) {
+                   System.out.println("parameters:\n" +
+                           "-s: hostname of wallet/pool (default: localhost)\n" + 
+                           "-p: port of wallet/pool (default: 9372)\n" + 
+                           "-b: bind to local address (default: )\n" +
+                           "-l: local proxy port (default: 8080)\n" +
+                           "-v: verbose"
+                           );
+                   return;                 
+             } else if (args[i].equals("-v")) {
+                 HttpServer.DEBUG = true;
+             }
+  
+             i++;
+         }       
+        
+        System.out.println("MediterraneanCoin Proxy");
+        System.out.println("parameters:\n" + 
+                "wallet hostname: " + hostname + "\n" +
+                "wallet port: " + port + "\n" +
+                "bind to local address: " + bindAddress + "\n" +
+                "local proxy port: " + localport + "\n"
+                );
+        
+        Container container = new HttpServer(hostname, port);
+        Server server = new ContainerServer(container);
+        Connection connection = new SocketConnection(server);
+        SocketAddress address;
+
+        if (bindAddress.equals(""))
+            address = new InetSocketAddress(localport);
+        else
+            address = new InetSocketAddress(bindAddress, localport);
+
+        connection.connect(address);
+        
    }
     
     
