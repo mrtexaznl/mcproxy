@@ -199,6 +199,7 @@ public class HttpServer implements Container  {
                 boolean result = utils.doSendWorkMessage(workStr,authHeader);
 
 
+                /*
                 //
 
                 // 1 - byteswap all data received from miner
@@ -244,13 +245,13 @@ public class HttpServer implements Container  {
                 System.out.println("hash: " + hash.toString(16));  
 
                 System.out.println("is hash ok? " + checkHash);
-
+                */
                 //
 
 
                 works.remove(receivedDataStr.substring(0, 68*2));
 
-                answer = "{\"result\":true,\"error\":null,\"id\":1}";
+                answer = "{\"result\":" + result + ",\"error\":null,\"id\":1}";
               }
 
 
