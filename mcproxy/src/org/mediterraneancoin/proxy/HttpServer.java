@@ -308,6 +308,7 @@ public class HttpServer implements Container  {
                            "-p: port of wallet/pool (default: 9372)\n" + 
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" +
+                           "-a: use asynchronous http server (default: no)\n" +
                            "-v: verbose"
                            );
                    return;                 
