@@ -286,6 +286,8 @@ public class HttpServer implements Container  {
         int localport = 8080;        
 
         int i = 0;
+        
+        boolean useAsyncHttpServer = false;
 
 
          while (i < args.length) {
@@ -293,6 +295,8 @@ public class HttpServer implements Container  {
              if (args[i].equals("-s")) {
                  i++;
                  hostname = args[i];
+             } else if (args[i].equals("-a")) {
+                 useAsyncHttpServer = true;
              } else if (args[i].equals("-p")) {
                  i++;
                  port = Integer.parseInt(args[i]);
@@ -308,7 +312,7 @@ public class HttpServer implements Container  {
                            "-p: port of wallet/pool (default: 9372)\n" + 
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" +
-                           "-a: use asynchronous http server (default: no)\n" +
+                           "-a: use asynchronous http server (default: do not use)\n" +
                            "-v: verbose"
                            );
                    return;                 
@@ -324,10 +328,11 @@ public class HttpServer implements Container  {
                 "wallet hostname: " + hostname + "\n" +
                 "wallet port: " + port + "\n" +
                 "bind to local address: " + bindAddress + "\n" +
-                "local proxy port: " + localport + "\n"
+                "local proxy port: " + localport + "\n" +
+                "use asynchronous HttpServer: " + useAsyncHttpServer + "\n"
                 );
         
-        Container container = new HttpServer(hostname, port);
+        Container container = useAsyncHttpServer ? new AsyncHttpServer(hostname, port) : new HttpServer(hostname, port);
         Server server = new ContainerServer(container);
         Connection connection = new SocketConnection(server);
         SocketAddress address;

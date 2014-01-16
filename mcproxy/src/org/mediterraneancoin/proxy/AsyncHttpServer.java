@@ -26,7 +26,7 @@ public class AsyncHttpServer implements Container {
 
     static final ObjectMapper mapper = new ObjectMapper();
     static URL url;
-    static RPCUtils utils;
+    //static RPCUtils utils;
     
     String user = "admin";
     String pass = "1234";  
@@ -42,6 +42,8 @@ public class AsyncHttpServer implements Container {
         
         String sentData;
         String dataFromWallet;
+        
+        RPCUtils utils;
     }
         
     
@@ -114,8 +116,13 @@ public class AsyncHttpServer implements Container {
 
 
               String answer = "";
+              
 
               if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize == 0) {
+                  
+                  System.out.println("request from miner...");
+                  
+                  RPCUtils utils = new RPCUtils(url, "", "");
 
                   WorkState work = utils.doGetWorkMessage(false,authHeader);
 
@@ -134,8 +141,10 @@ public class AsyncHttpServer implements Container {
 
                   byte [] part1 = hasher.firstPartHash(work.getData1() );
 
-                  System.out.println("part1: " + tohex(part1));
-                  System.out.println();                
+                  if (DEBUG) { 
+                    System.out.println("part1: " + tohex(part1));
+                    System.out.println();                
+                  }
 
                   ObjectNode resultNode = mapper.createObjectNode();
 
@@ -159,6 +168,8 @@ public class AsyncHttpServer implements Container {
                   sessionStorage.work = work;
                   sessionStorage.sentData = dataStr;
                   sessionStorage.dataFromWallet = dataFromWallet;
+                  
+                  sessionStorage.utils = utils;
 
                   works.put(dataStr.substring(0, 68*2) , sessionStorage);
 
@@ -172,7 +183,7 @@ public class AsyncHttpServer implements Container {
 
               } else if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize != 0) {
 
-
+                  System.out.println("response to miner...");
 
                   String receivedDataStr = node.get("params").get(0).asText();
                   //SuperHasher hasher 
@@ -198,6 +209,9 @@ public class AsyncHttpServer implements Container {
                       String workStr = WorkState.byteSwap(sessionStorage.dataFromWallet.substring(0, 68*2)) +
                               receivedDataStr.substring(68*2);
 
+                      
+                      RPCUtils utils = sessionStorage.utils;
+                      
                         // send to wallet
                         // need to byteswap! it's done inside doSendWorkMessage                    
                       boolean result = utils.doSendWorkMessage(workStr,authHeader);
@@ -293,7 +307,7 @@ public class AsyncHttpServer implements Container {
        
         url = new URL("http", hostname, port, "/");
         
-        utils = new RPCUtils(url, "", "");
+        
  
         SuperHasher.DEBUG = false;       
          
