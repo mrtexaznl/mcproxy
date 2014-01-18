@@ -266,6 +266,8 @@ public class AsyncHttpServer implements Container {
                       */
                       //
 
+                      sessionStorage.utils = null;
+                      sessionStorage.work = null;
 
                       works.remove(receivedDataStr.substring(0, 68*2));
 
