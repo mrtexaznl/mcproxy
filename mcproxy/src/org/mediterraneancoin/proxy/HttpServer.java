@@ -1,7 +1,6 @@
 package org.mediterraneancoin.proxy;
 
 import java.io.PrintStream;
-import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.SocketAddress;
@@ -10,7 +9,6 @@ import java.util.HashMap;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.mediterraneancoin.miner.SuperHasher;
-import static org.mediterraneancoin.miner.SuperHasher.readCompact;
 import org.mediterraneancoin.proxy.net.RPCUtils;
 import static org.mediterraneancoin.proxy.net.RPCUtils.tohex;
 import org.mediterraneancoin.proxy.net.WorkState;
@@ -288,6 +286,7 @@ public class HttpServer implements Container  {
         int i = 0;
         
         boolean useAsyncHttpServer = false;
+        int numberOfThreads = -1;
 
 
          while (i < args.length) {
@@ -297,6 +296,13 @@ public class HttpServer implements Container  {
                  hostname = args[i];
              } else if (args[i].equals("-a")) {
                  useAsyncHttpServer = true;
+             } else if (args[i].equals("-f")) {
+                 i++;
+                 numberOfThreads = Integer.parseInt(args[i]);
+                 
+                 if (numberOfThreads <= 0)
+                     throw new RuntimeException("-f: parameter must be greater then zero");
+                 
              } else if (args[i].equals("-p")) {
                  i++;
                  port = Integer.parseInt(args[i]);
@@ -312,7 +318,8 @@ public class HttpServer implements Container  {
                            "-p: port of wallet/pool (default: 9372)\n" + 
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" +
-                           "-a: use asynchronous http server (default: do not use)\n" +
+                           "-a: use asynchronous (multithread) http server (default: use synchronous http server); takes no parameters\n" +
+                           "-f: use multithread http server using max n threads; parameter: integer greater then zero\n" +
                            "-v: verbose"
                            );
                    return;                 
@@ -332,7 +339,18 @@ public class HttpServer implements Container  {
                 "use asynchronous HttpServer: " + useAsyncHttpServer + "\n"
                 );
         
-        Container container = useAsyncHttpServer ? new AsyncHttpServer(hostname, port) : new HttpServer(hostname, port);
+        Container container;
+        
+        if (useAsyncHttpServer) { 
+            if (numberOfThreads == -1)
+                container = new AsyncHttpServer(hostname, port);
+            else 
+                container = new AsyncHttpServer(hostname, port, numberOfThreads);
+            
+        } else {
+            container = new HttpServer(hostname, port);
+        }
+        
         Server server = new ContainerServer(container);
         Connection connection = new SocketConnection(server);
         SocketAddress address;
