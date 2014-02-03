@@ -49,6 +49,12 @@ public class Test01 {
         }
         
         long end = System.currentTimeMillis();
+        
+        long totalTime= end - start / 1000;
+        
+        System.out.println("total time(s)=" + totalTime);
+        
+        System.out.println("time/iter(s)=" + totalTime/repetitions);
     }
     
     public static void main(String [] args) throws MalformedURLException, IOException {
