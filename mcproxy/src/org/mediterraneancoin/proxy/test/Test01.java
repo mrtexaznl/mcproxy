@@ -87,7 +87,9 @@ public class Test01 {
                            "-r: number of repetitions (default: 1000)\n" +  
                            "-u: wallet rpc username (default: admin)\n" +
                            "-P: wallet rpc password (default: 12345)\n" +
-                           "-v: verbose"
+                           "-v: verbose\n\n\n" +
+                           "example: "
+                           + "java -cp dist\\mcproxy.jar org.mediterraneancoin.proxy.test.Test01  -U admin -P 12345\n"
                            );
                    return;                 
              } else if (args[i].equals("-v")) {
