@@ -538,6 +538,10 @@ public class RPCUtils {
         return res;
         
     }
+
+    public String getUserPass() {
+        return userPass;
+    }
     
     
     
