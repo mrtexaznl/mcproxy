@@ -2,6 +2,7 @@ package org.mediterraneancoin.proxy;
 
 import java.net.URL;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.mediterraneancoin.proxy.net.RPCUtils;
 
 /**
@@ -62,11 +63,15 @@ public class HttpServer {
                 );
                 
         
-        
-        
-        Server server = new Server(localport);
+        QueuedThreadPool threadPool = new QueuedThreadPool();
+        threadPool.setMaxThreads(32);
+       
+        // default port: 8080
+        Server server = new Server(threadPool);
+ 
         
         server.setHandler(new McproxyHandler());
+         
         
         McproxyHandler.url = new URL("http", hostname, port, "/");
         
