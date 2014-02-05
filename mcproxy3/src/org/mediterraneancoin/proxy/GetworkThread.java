@@ -183,8 +183,11 @@ public class GetworkThread implements Runnable {
         
         while (true) {
             
-            
-            getwork();
+            try {
+                getwork();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
             
             long now = System.currentTimeMillis();
             
