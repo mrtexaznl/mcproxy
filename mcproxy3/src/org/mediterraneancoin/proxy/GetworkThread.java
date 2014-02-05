@@ -66,11 +66,19 @@ public class GetworkThread implements Runnable {
         long now = System.currentTimeMillis();
         
         if (now - lastGetwork < localMinDeltaTime) {
-            System.out.println("too near getwork, skipping; delta = " + (now - lastGetwork) + ", localMinDeltaTime=" + localMinDeltaTime);
+            if (DEBUG)
+                System.out.println("too near getwork, skipping; delta = " + (now - lastGetwork) + ", localMinDeltaTime=" + localMinDeltaTime);
+            
+            try {
+                Thread.sleep(now - lastGetwork);
+            } catch (InterruptedException ex) {
+        
+            }
+            
             return;
         }
         
-        System.out.println("getwork request to wallet/daemon...");
+        System.out.println("getwork request to wallet/daemon... thread " + threadId);
         
         SessionStorage storage = new SessionStorage();
         
@@ -151,8 +159,10 @@ public class GetworkThread implements Runnable {
     
     public void cleanup() {
         
-        while (queue.size() > minQueueLength * 3) {
-            System.out.println("queue.size(): " + queue.size());
+        while (queue.size() > minQueueLength * 4) {
+            if (DEBUG)
+                System.out.println("queue.size(): " + queue.size());
+            
             queue.poll();
         }
                     
@@ -161,14 +171,22 @@ public class GetworkThread implements Runnable {
     public static SessionStorage getSessionStorage() {
         SessionStorage result;
         
-        while ((result = queue.poll()) == null) {
-            try {
-                Thread.sleep(minDeltaTime);
-            } catch (InterruptedException ex) {
-            }
-        }
+        //long dt = 0;
         
-        System.out.println("poll from servlet");
+        //do {
+        
+            while ((result = queue.poll()) == null) {
+                try {
+                    Thread.sleep(minDeltaTime);
+                } catch (InterruptedException ex) {
+                }
+            }
+        
+        //} while (dt < );
+        
+        
+        if (DEBUG)
+            System.out.println("poll from servlet");
                 
         return result;        
     }
@@ -179,6 +197,10 @@ public class GetworkThread implements Runnable {
         
         while (true) {
             
+            if (DEBUG)
+                System.out.println("thread " + threadId + ", queue.size()=" + queue.size() + ", minQueueLength=" + minQueueLength +
+                    ", localMinDeltaTime=" + localMinDeltaTime); 
+            
             try {
                 getwork();
             } catch (Exception ex) {
@@ -188,25 +210,42 @@ public class GetworkThread implements Runnable {
             long now = System.currentTimeMillis();
             
             try {
-                Thread.sleep( minDeltaTime / 2 );
+                Thread.sleep( localMinDeltaTime / 2 );
             } catch (InterruptedException ex) {
             }
             
             cleanup();
             
             //
-            
-            if (queue.size() < minQueueLength) {
+            if (queue.size() <= 1) {
+                localMinDeltaTime = 10;
+            } else if (queue.size() < minQueueLength) {
+                
+                if (DEBUG)    
+                    System.out.print(threadId + "***decreasing localMinDeltaTime from " + localMinDeltaTime + " ");
+                
+                localMinDeltaTime = (localMinDeltaTime * 85) / 100;
+                
                 if (localMinDeltaTime < 10) {
                     localMinDeltaTime = 10;
                     continue;
-                }
+                }                
                 
-                localMinDeltaTime = (localMinDeltaTime * 90) / 100;
+                if (DEBUG)
+                    System.out.println("to " + localMinDeltaTime + " ms");
                 
-            } else if (queue.size() > (minQueueLength * 3) / 2) {
+            } else if (queue.size() > (int)((minQueueLength * 3.) / 2.)) {
                 
-                localMinDeltaTime = (localMinDeltaTime * 110) / 100;
+                if (DEBUG)
+                    System.out.print(threadId + "+++increasing localMinDeltaTime from " + localMinDeltaTime + " ");
+                
+                localMinDeltaTime =  (localMinDeltaTime * 115) / 100;
+                
+                if (localMinDeltaTime > 10000)
+                    localMinDeltaTime = 10000;
+                
+                if (DEBUG)
+                    System.out.println("to " + localMinDeltaTime + " ms");
                 
             }
             

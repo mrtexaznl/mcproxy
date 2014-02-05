@@ -36,6 +36,8 @@ public class HttpServer {
         int i = 0;
         
         long minDeltaTime = 50;         
+        
+        int minQueueLength = 4;
 
          while (i < args.length) {
 
@@ -45,6 +47,9 @@ public class HttpServer {
              } else if (args[i].equals("-p")) {
                  i++;
                  port = Integer.parseInt(args[i]);
+             } else if (args[i].equals("-m")) {
+                 i++;
+                 minQueueLength = Integer.parseInt(args[i]);
              } else if (args[i].equals("-t")) {
                  i++;
                  minDeltaTime = Long.parseLong(args[i]);
@@ -61,6 +66,7 @@ public class HttpServer {
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" + 
                            "-t: min delta time (default: 50 ms)\n" + 
+                           "-m: mininum queue length (default: 4)\n" + 
                            "-v: verbose"
                            );
                    return;                 
@@ -131,6 +137,8 @@ public class HttpServer {
         
          
         GetworkThread.setMinDeltaTime(minDeltaTime);
+        
+        GetworkThread.setMinQueueLength(4);
         
         for (int h = 0; h < getworkThreads.length; h++) {
             getworkThreads[h] = new GetworkThread(McproxyServlet.url, McproxyServlet.utils);

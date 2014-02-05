@@ -199,7 +199,7 @@ public class McproxyServlet extends HttpServlet {
                 }
             } else {
                 
-                System.out.println("getwork request...");
+                System.out.println("getwork request from miner...");
                 
                 McproxyHandler.SessionStorage sessionStorage = GetworkThread.getSessionStorage();
                 
@@ -211,7 +211,7 @@ public class McproxyServlet extends HttpServlet {
 
         } else if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize != 0) {
 
-            System.out.println("submitwork request...");
+            System.out.println("submitwork request from miner...");
 
             String receivedDataStr = node.get("params").get(0).asText();
             //SuperHasher hasher 

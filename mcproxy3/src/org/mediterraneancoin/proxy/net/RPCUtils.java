@@ -45,6 +45,8 @@ public class RPCUtils {
         
         final ObjectMapper mapper = new ObjectMapper();
         
+        public static boolean DEBUG;
+        
         
 	public RPCUtils(  URL queryUrl, String user, String pass  ) {
  
@@ -359,7 +361,7 @@ public class RPCUtils {
 		getWorkMessage.putArray("params");
 		getWorkMessage.put("id", 1);
 
-		JsonNode responseMessage = doJSONRPCCall(longPoll, getWorkMessage, true, authHeader);
+		JsonNode responseMessage = doJSONRPCCall(longPoll, getWorkMessage, DEBUG, authHeader);
 
 		String datas;
 		String midstates;
@@ -425,7 +427,7 @@ public class RPCUtils {
 		
                 sendWorkMessage.put("id", 1);
 
-		JsonNode responseMessage = doJSONRPCCall(false, sendWorkMessage,true,authHeader);
+		JsonNode responseMessage = doJSONRPCCall(false, sendWorkMessage,DEBUG,authHeader);
 
 		boolean accepted;
 
@@ -477,7 +479,7 @@ public class RPCUtils {
 		
                 sendWorkMessage.put("id", 1);
 
-		JsonNode responseMessage = doJSONRPCCall(false, sendWorkMessage,true, authHeader);
+		JsonNode responseMessage = doJSONRPCCall(false, sendWorkMessage,DEBUG, authHeader);
 
 		boolean accepted;
 
