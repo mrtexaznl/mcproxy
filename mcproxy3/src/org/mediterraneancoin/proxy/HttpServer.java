@@ -116,6 +116,8 @@ public class HttpServer {
                 //
         connector.setHost(bindAddress);
         connector.setPort(localport);
+        connector.setIdleTimeout(30000);
+        connector.setStopTimeout(40000);
         
         System.out.println( "connector.getAcceptors(): " +  connector.getAcceptors() );
         System.out.println( "connector.getAcceptQueueSize(): " + connector.getAcceptQueueSize()) ;
