@@ -3,6 +3,8 @@ package org.mediterraneancoin.proxy.test;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.apache.commons.codec.binary.Base64;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -35,16 +37,31 @@ public class Test01 {
         url = new URL("http", hostname, port, "/");
         
         
-        RPCUtils utils = new RPCUtils(url, username, password);
+        final RPCUtils utils = new RPCUtils(url, username, password);
         
-        String userPass = "Basic " + Base64.encodeBase64String((username + ":" + password).getBytes()).trim().replace("\r\n", "");
+        final String userPass = "Basic " + Base64.encodeBase64String((username + ":" + password).getBytes()).trim().replace("\r\n", "");
         // multithreading test
         
         long start = System.currentTimeMillis();
         
         for (int i = 0; i < repetitions; i++) {
-        
-            WorkState doGetWorkMessage = utils.doGetWorkMessage(false, userPass);
+            
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        WorkState doGetWorkMessage = utils.doGetWorkMessage(false, userPass);
+                    } catch (IOException ex) {
+                        Logger.getLogger(Test01.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }.start();
+            
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Test01.class.getName()).log(Level.SEVERE, null, ex);
+            }
             
         }
         

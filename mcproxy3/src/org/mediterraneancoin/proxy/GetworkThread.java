@@ -34,7 +34,7 @@ public class GetworkThread implements Runnable {
     
     final ObjectMapper mapper = new ObjectMapper();
     
-    private final ConcurrentLinkedQueue<SessionStorage> queue = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<SessionStorage> queue = new ConcurrentLinkedQueue<SessionStorage>();
     
     public static GetworkThread getInstance() {
         if (instance == null) {
