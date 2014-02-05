@@ -61,7 +61,8 @@ public class HttpServer {
                 "wallet port: " + port + "\n" +
                 "local proxy port: " + localport + "\n"
                 );
-                
+        
+        GetworkThread getworkThread = GetworkThread.getInstance();
         
         QueuedThreadPool threadPool = new QueuedThreadPool();
         threadPool.setMaxThreads(32);
@@ -75,7 +76,10 @@ public class HttpServer {
         
         McproxyHandler.url = new URL("http", hostname, port, "/");
         
-        McproxyHandler.utils = new RPCUtils(McproxyHandler.url, "", "");        
+        McproxyHandler.utils = new RPCUtils(McproxyHandler.url, "", "");      
+        
+        getworkThread.start(McproxyHandler.url, McproxyHandler.utils);
+        
         
         server.start();
          
