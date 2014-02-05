@@ -34,7 +34,8 @@ public class HttpServer {
         localport = 8080;        
 
         int i = 0;
-         
+        
+        long minDeltaTime = 200;         
 
          while (i < args.length) {
 
@@ -44,7 +45,10 @@ public class HttpServer {
              } else if (args[i].equals("-p")) {
                  i++;
                  port = Integer.parseInt(args[i]);
-             }  else if (args[i].equals("-b")) {
+             } else if (args[i].equals("-t")) {
+                 i++;
+                 minDeltaTime = Long.parseLong(args[i]);
+             } else if (args[i].equals("-b")) {
                  i++;
                  bindAddress = args[i];
              }  else if (args[i].equals("-l")) {
@@ -56,6 +60,7 @@ public class HttpServer {
                            "-p: port of wallet/pool (default: 9372)\n" + 
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" + 
+                           "-t: min delta time (default: 200 ms)\n" + 
                            "-v: verbose"
                            );
                    return;                 
@@ -123,7 +128,7 @@ public class HttpServer {
         
         getworkThread.start(McproxyServlet.url, McproxyServlet.utils);
          
-        
+        getworkThread.setMinDeltaTime(minDeltaTime);
         
         server.start();
          

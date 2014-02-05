@@ -153,6 +153,13 @@ public class GetworkThread implements Runnable {
 
     }
     
+    public void cleanup() {
+        
+        while (queue.size() > 32)
+            queue.poll();
+                    
+    }    
+    
     public SessionStorage getSessionStorage() {
         SessionStorage result;
         
@@ -184,7 +191,7 @@ public class GetworkThread implements Runnable {
             } catch (InterruptedException ex) {
             }
             
-            
+            cleanup();
         }
         
         
@@ -213,6 +220,8 @@ public class GetworkThread implements Runnable {
     public void setMinDeltaTime(long minDeltaTime) {
         this.minDeltaTime = minDeltaTime;
     }
+
+
     
 
     
