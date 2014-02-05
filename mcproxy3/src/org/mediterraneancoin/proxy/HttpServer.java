@@ -35,7 +35,7 @@ public class HttpServer {
 
         int i = 0;
         
-        long minDeltaTime = 200;         
+        long minDeltaTime = 50;         
 
          while (i < args.length) {
 

@@ -74,7 +74,7 @@ public class GetworkThread implements Runnable {
             return;
         }
         
-        System.out.println("getwork request...");
+        System.out.println("getwork request to wallet/daemon...");
         
         SessionStorage storage = new SessionStorage();
         
@@ -155,8 +155,10 @@ public class GetworkThread implements Runnable {
     
     public void cleanup() {
         
-        while (queue.size() > 32)
+        while (queue.size() > 32) {
+            System.out.println("queue.size(): " + queue.size());
             queue.poll();
+        }
                     
     }    
     
@@ -165,12 +167,12 @@ public class GetworkThread implements Runnable {
         
         while ((result = queue.poll()) == null) {
             try {
-                Thread.sleep(50);
+                Thread.sleep(minDeltaTime);
             } catch (InterruptedException ex) {
             }
         }
         
-        System.out.println("getSessionStorage");
+        System.out.println("poll from servlet");
                 
         return result;        
     }
