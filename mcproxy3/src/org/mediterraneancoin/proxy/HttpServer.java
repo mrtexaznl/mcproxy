@@ -60,7 +60,7 @@ public class HttpServer {
                            "-p: port of wallet/pool (default: 9372)\n" + 
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" + 
-                           "-t: min delta time (default: 200 ms)\n" + 
+                           "-t: min delta time (default: 50 ms)\n" + 
                            "-v: verbose"
                            );
                    return;                 
@@ -79,8 +79,11 @@ public class HttpServer {
                 "local proxy port: " + localport + "\n"
                 );
  
+        int cores = Runtime.getRuntime().availableProcessors();
         
-        GetworkThread getworkThread = GetworkThread.getInstance();
+        System.out.println("number of detected cores: " + cores);
+        
+        GetworkThread [] getworkThreads = new GetworkThread[cores];
  
         QueuedThreadPool threadPool = new QueuedThreadPool(200,16);
        
@@ -124,11 +127,18 @@ public class HttpServer {
         server.addConnector(connector);
          
          
-        McproxyHandler.utils = new RPCUtils(McproxyServlet.url, "", "");      
+        //McproxyHandler.utils = new RPCUtils(McproxyServlet.url, "", "");      
         
-        getworkThread.start(McproxyServlet.url, McproxyServlet.utils);
          
-        getworkThread.setMinDeltaTime(minDeltaTime);
+        GetworkThread.setMinDeltaTime(minDeltaTime);
+        
+        for (int h = 0; h < getworkThreads.length; h++) {
+            getworkThreads[h] = new GetworkThread(McproxyServlet.url, McproxyServlet.utils);
+            
+            getworkThreads[h].start();
+            
+            Thread.sleep(250);
+        }
         
         server.start();
          

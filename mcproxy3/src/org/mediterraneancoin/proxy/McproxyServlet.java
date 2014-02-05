@@ -39,8 +39,7 @@ public class McproxyServlet extends HttpServlet {
     public static RPCUtils utils;
     
     static HashMap<String, SessionStorage> works = new HashMap<String, SessionStorage>();
-    
-    private GetworkThread getworkThread = GetworkThread.getInstance();
+     
     
 
     @Override
@@ -74,8 +73,8 @@ public class McproxyServlet extends HttpServlet {
         String authHeader = request.getHeader("authorization");
         int contentLength = Integer.parseInt( request.getHeader("content-length") );
         
-        if (getworkThread.getAuthHeader() == null)
-            GetworkThread.getInstance().setAuthHeader(authHeader);        
+        if (GetworkThread.getAuthHeader() == null)
+            GetworkThread.setAuthHeader(authHeader);        
         
         if (DEBUG) {
             System.out.println("auth: " + authHeader);
@@ -202,7 +201,7 @@ public class McproxyServlet extends HttpServlet {
                 
                 System.out.println("getwork request...");
                 
-                McproxyHandler.SessionStorage sessionStorage = getworkThread.getSessionStorage();
+                McproxyHandler.SessionStorage sessionStorage = GetworkThread.getSessionStorage();
                 
                 works.put(sessionStorage.sentData.substring(0, 68*2) , sessionStorage);
                 

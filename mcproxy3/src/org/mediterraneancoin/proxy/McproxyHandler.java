@@ -37,9 +37,7 @@ public class McproxyHandler extends AbstractHandler {
     public static RPCUtils utils;
     
     static HashMap<String, SessionStorage> works = new HashMap<String, SessionStorage>();
-    
-    private GetworkThread getworkThread = GetworkThread.getInstance();
- 
+     
     static public class SessionStorage {
         WorkState work;
         
@@ -62,8 +60,8 @@ public class McproxyHandler extends AbstractHandler {
         String authHeader = request.getHeader("authorization");
         int contentLength = Integer.parseInt( request.getHeader("content-length") );
         
-        if (getworkThread.getAuthHeader() == null)
-            GetworkThread.getInstance().setAuthHeader(authHeader);
+        if (GetworkThread.getAuthHeader() == null)
+            GetworkThread.setAuthHeader(authHeader);
         
         if (DEBUG) {
             System.out.println("auth: " + authHeader);
@@ -187,7 +185,7 @@ public class McproxyHandler extends AbstractHandler {
 
             } else {
                 
-                SessionStorage sessionStorage = getworkThread.getSessionStorage();
+                SessionStorage sessionStorage = GetworkThread.getSessionStorage();
                 
                 works.put(sessionStorage.sentData.substring(0, 68*2) , sessionStorage);
                 

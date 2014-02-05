@@ -19,43 +19,39 @@ import org.mediterraneancoin.proxy.net.WorkState;
  * @author test
  */
 public class GetworkThread implements Runnable {
+          
+    private final URL url;
+    private final RPCUtils utils;
     
-    private final static Object lock = new Object();
+    private static String authHeader;
     
-    private static GetworkThread instance;
+    private static long minDeltaTime = 200; // ms
+    private static int minQueueLength = 4;
     
-    private URL url;
-    private RPCUtils utils;
-    
-    private String authHeader;
-    
-    private long minDeltaTime = 200; // ms
     private long lastGetwork;
+    private long localMinDeltaTime;
     
     final ObjectMapper mapper = new ObjectMapper();
     
-    private final ConcurrentLinkedQueue<SessionStorage> queue = new ConcurrentLinkedQueue<SessionStorage>();
+    private static final ConcurrentLinkedQueue<SessionStorage> queue = new ConcurrentLinkedQueue<SessionStorage>();
     
-    public static GetworkThread getInstance() {
-        if (instance == null) {
-            synchronized(lock) {
-                if (instance == null) {
-                    instance = new GetworkThread();
-                }
-            }
-        }
+    private static int counter = 0;
+    
+    private int threadId; 
+
+    private static boolean DEBUG;
+    
+    public GetworkThread(URL url, RPCUtils utils) {   
         
-        return instance;
-    }
-    private boolean DEBUG;
-    
-    private GetworkThread() {        
-    }
-    
-    public void start(URL url, RPCUtils utils) {
-    
+        threadId = counter++;
+        
         this.url = url;
-        this.utils = utils;
+        this.utils = utils;        
+        
+        this.localMinDeltaTime = minDeltaTime;
+    }
+    
+    public void start() {
         
         new Thread(this).start();
         
@@ -69,8 +65,8 @@ public class GetworkThread implements Runnable {
         
         long now = System.currentTimeMillis();
         
-        if (now - lastGetwork < minDeltaTime) {
-            System.out.println("too near getwork, skipping");
+        if (now - lastGetwork < localMinDeltaTime) {
+            System.out.println("too near getwork, skipping; delta = " + (now - lastGetwork) + ", localMinDeltaTime=" + localMinDeltaTime);
             return;
         }
         
@@ -155,14 +151,14 @@ public class GetworkThread implements Runnable {
     
     public void cleanup() {
         
-        while (queue.size() > 32) {
+        while (queue.size() > minQueueLength * 3) {
             System.out.println("queue.size(): " + queue.size());
             queue.poll();
         }
                     
     }    
     
-    public SessionStorage getSessionStorage() {
+    public static SessionStorage getSessionStorage() {
         SessionStorage result;
         
         while ((result = queue.poll()) == null) {
@@ -197,33 +193,78 @@ public class GetworkThread implements Runnable {
             }
             
             cleanup();
+            
+            //
+            
+            if (queue.size() < minQueueLength) {
+                if (localMinDeltaTime < 10) {
+                    localMinDeltaTime = 10;
+                    continue;
+                }
+                
+                localMinDeltaTime = (localMinDeltaTime * 90) / 100;
+                
+            } else if (queue.size() > (minQueueLength * 3) / 2) {
+                
+                localMinDeltaTime = (localMinDeltaTime * 110) / 100;
+                
+            }
+            
         }
         
         
     }
 
-    public String getAuthHeader() {
+    public static String getAuthHeader() {
         return authHeader;
     }
 
-    public void setAuthHeader(String authHeader) {
-        this.authHeader = authHeader;
+    public static void setAuthHeader(String authHeader) {
+        GetworkThread.authHeader = authHeader;
     }
 
-    public boolean isDEBUG() {
+
+
+    public static boolean isDEBUG() {
         return DEBUG;
     }
 
-    public void setDEBUG(boolean DEBUG) {
-        this.DEBUG = DEBUG;
+    public static void setDEBUG(boolean _DEBUG) {
+        DEBUG = _DEBUG;
     }
 
-    public long getMinDeltaTime() {
+    public static long getMinDeltaTime() {
         return minDeltaTime;
     }
 
-    public void setMinDeltaTime(long minDeltaTime) {
-        this.minDeltaTime = minDeltaTime;
+    public static void setMinDeltaTime(long minDeltaTime) {
+        GetworkThread.minDeltaTime = minDeltaTime;
+    }
+
+
+
+    public long getLastGetwork() {
+        return lastGetwork;
+    }
+
+    public void setLastGetwork(long lastGetwork) {
+        this.lastGetwork = lastGetwork;
+    }
+
+    public int getThreadId() {
+        return threadId;
+    }
+
+    public void setThreadId(int threadId) {
+        this.threadId = threadId;
+    }
+
+    public static int getMinQueueLength() {
+        return minQueueLength;
+    }
+
+    public static void setMinQueueLength(int minQueueLength) {
+        GetworkThread.minQueueLength = minQueueLength;
     }
 
 
