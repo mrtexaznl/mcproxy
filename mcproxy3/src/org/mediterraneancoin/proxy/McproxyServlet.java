@@ -14,6 +14,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.mediterraneancoin.miner.SuperHasher;
 import static org.mediterraneancoin.proxy.McproxyHandler.DEBUG;
+import org.mediterraneancoin.proxy.McproxyHandler.SessionStorage;
 import static org.mediterraneancoin.proxy.McproxyHandler.utils;
 import static org.mediterraneancoin.proxy.McproxyHandler.works;
 import org.mediterraneancoin.proxy.net.RPCUtils;
@@ -39,14 +40,8 @@ public class McproxyServlet extends HttpServlet {
     
     static HashMap<String, SessionStorage> works = new HashMap<String, SessionStorage>();
     
+    private GetworkThread getworkThread = GetworkThread.getInstance();
     
- 
-    static class SessionStorage {
-        WorkState work;
-        
-        String sentData;
-        String dataFromWallet;
-    }           
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -78,6 +73,9 @@ public class McproxyServlet extends HttpServlet {
         
         String authHeader = request.getHeader("authorization");
         int contentLength = Integer.parseInt( request.getHeader("content-length") );
+        
+        if (getworkThread.getAuthHeader() == null)
+            GetworkThread.getInstance().setAuthHeader(authHeader);        
         
         if (DEBUG) {
             System.out.println("auth: " + authHeader);
@@ -128,76 +126,88 @@ public class McproxyServlet extends HttpServlet {
           
         if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize == 0) {
             
-            System.out.println("getwork request...");
- 
-            WorkState work = null;
-            try {
-                work = utils.doGetWorkMessage(false,authHeader);
-            } catch (IOException ex) {
-                Logger.getLogger(McproxyHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            if (false) {
+                System.out.println("getwork request...");
 
-            String dataFromWallet = work.getAllDataHex();
+                WorkState work = null;
+                try {
+                    work = utils.doGetWorkMessage(false,authHeader);
+                } catch (IOException ex) {
+                    Logger.getLogger(McproxyHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
 
-            if (DEBUG) {  
-                // data has already been byteswapped inside doGetWorkMessage
-                System.out.println("data: " + dataFromWallet);              
-                System.out.println("target: " + work.getTarget());
-            }
+                String dataFromWallet = work.getAllDataHex();
 
- 
-            SuperHasher hasher = null;
-            try {
-                hasher = new SuperHasher();
-            } catch (GeneralSecurityException ex) {
-                Logger.getLogger(McproxyHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
+                if (DEBUG) {  
+                    // data has already been byteswapped inside doGetWorkMessage
+                    System.out.println("data: " + dataFromWallet);              
+                    System.out.println("target: " + work.getTarget());
+                }
 
 
-
-            byte [] part1 = null;
-            try {
-                part1 = hasher.firstPartHash(work.getData1() );
-            } catch (GeneralSecurityException ex) {
-                Logger.getLogger(McproxyHandler.class.getName()).log(Level.SEVERE, null, ex);
-            }
-
-            if (DEBUG) { 
-                System.out.println("part1: " + tohex(part1));
-                System.out.println();                
-            }
-
-            ObjectNode resultNode = mapper.createObjectNode();
-
-            // we need to byteswap data before sending it
-            String tempData = tohex(part1) + tohex(work.getData2());
-
-            String dataStr = WorkState.byteSwap( tempData );
-
-            resultNode.put("data", dataStr );
-            resultNode.put("target", work.getTarget());                
-
-            ObjectNode answerNode = mapper.createObjectNode();
-            answerNode.put("result", resultNode);
-            answerNode.put("error", (String)null);
-            answerNode.put("id", Long.parseLong(id) );        
-
-            answer = answerNode.toString();
+                SuperHasher hasher = null;
+                try {
+                    hasher = new SuperHasher();
+                } catch (GeneralSecurityException ex) {
+                    Logger.getLogger(McproxyHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
 
 
-            SessionStorage sessionStorage = new SessionStorage();
-            sessionStorage.work = work;
-            sessionStorage.sentData = dataStr;
-            sessionStorage.dataFromWallet = dataFromWallet;
 
-            works.put(dataStr.substring(0, 68*2) , sessionStorage);
+                byte [] part1 = null;
+                try {
+                    part1 = hasher.firstPartHash(work.getData1() );
+                } catch (GeneralSecurityException ex) {
+                    Logger.getLogger(McproxyHandler.class.getName()).log(Level.SEVERE, null, ex);
+                }
 
-          
+                if (DEBUG) { 
+                    System.out.println("part1: " + tohex(part1));
+                    System.out.println();                
+                }
 
-            if (DEBUG) { 
-                System.out.println("json: " + answer);
-                System.out.println();
-                System.out.println();
+                ObjectNode resultNode = mapper.createObjectNode();
+
+                // we need to byteswap data before sending it
+                String tempData = tohex(part1) + tohex(work.getData2());
+
+                String dataStr = WorkState.byteSwap( tempData );
+
+                resultNode.put("data", dataStr );
+                resultNode.put("target", work.getTarget());                
+
+                ObjectNode answerNode = mapper.createObjectNode();
+                answerNode.put("result", resultNode);
+                answerNode.put("error", (String)null);
+                answerNode.put("id", Long.parseLong(id) );        
+
+                answer = answerNode.toString();
+
+
+                SessionStorage sessionStorage = new SessionStorage();
+                sessionStorage.work = work;
+                sessionStorage.sentData = dataStr;
+                sessionStorage.dataFromWallet = dataFromWallet;
+
+                works.put(dataStr.substring(0, 68*2) , sessionStorage);
+
+
+
+                if (DEBUG) { 
+                    System.out.println("json: " + answer);
+                    System.out.println();
+                    System.out.println();
+                }
+            } else {
+                
+                System.out.println("getwork request...");
+                
+                McproxyHandler.SessionStorage sessionStorage = getworkThread.getSessionStorage();
+                
+                works.put(sessionStorage.sentData.substring(0, 68*2) , sessionStorage);
+                
+                answer = sessionStorage.answer;                
+                
             }
 
         } else if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize != 0) {
