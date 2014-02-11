@@ -73,7 +73,7 @@ public class JSONRPCNetworkState extends NetworkState {
 	}
 
 	JsonNode doJSONRPCCall(boolean longPoll, ObjectNode message) throws IOException {
-      HttpURLConnection connection = null;
+        HttpURLConnection connection = null;
 		try {
 	      URL url;
 
