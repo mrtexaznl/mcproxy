@@ -1,68 +1,49 @@
 package org.mediterraneancoin.proxy;
-
-import com.diablominer.DiabloMiner.NetworkState.WorkState;
+ 
 import java.io.IOException;
 import java.net.Socket;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import java.io.PrintStream;
-
+import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.Scanner;
-import java.util.Random;
-
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
- 
-
-import org.apache.commons.codec.binary.Hex;
-import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
-import org.codehaus.jackson.node.JsonNodeFactory;
+ 
 
 
 public class StratumConnection
 {
-
-    /** At least for now the job info is held in memory
-     * so generate a new session id on JVM restart since all the jobs
-     * from the old one are certainly gone.  Also, helps with switching nodes.
-     * This way, we reject resumes from other runs.
-     */
-    //public static final String RUNTIME_SESSION=HexUtil.sha256("" + new Random().nextLong());
-
-    //private StratumServer server;
+ 
     private Socket sock;
     private String connection_id;
     private AtomicLong last_network_action;
     private volatile boolean open;
-    private volatile boolean miningSubscribed = false;
-    //private PoolUser user;
-    //private Config config;
+    private volatile boolean miningSubscribed;
+ 
    
     private byte[] extranonce1;
     
     private String extraNonce1Str;
     private long extranonce2_size;
-
-    //private UserSessionData user_session_data;
+ 
     
-    private AtomicLong nextRequestId=new AtomicLong(10000);
+    private AtomicLong nextRequestId = new AtomicLong(10000);
 
     private LinkedBlockingQueue<ObjectNode> out_queue = new LinkedBlockingQueue<ObjectNode>();
     private SecureRandom rnd;
     
     static final ObjectMapper mapper = new ObjectMapper();
-    
-    private long id = -1;
-    private String client_version;
-    
+      
     String serverAddress;
     int port;
     
@@ -71,7 +52,7 @@ public class StratumConnection
     boolean lastOperationResult;
     long difficulty;
     
-    LinkedBlockingDeque<ServerWork> workQueue = new LinkedBlockingDeque<ServerWork>();
+    private LinkedBlockingDeque<ServerWork> workQueue = new LinkedBlockingDeque<ServerWork>();
     
     public static void main(String [] arg) throws IOException, InterruptedException {
         StratumConnection connection = new StratumConnection("node4.mediterraneancoin.org", 3333, "1");
@@ -115,8 +96,7 @@ public class StratumConnection
         //extranonce1=UserSessionData.getExtranonce1();
 
         rnd = new SecureRandom();
-
-        id = rnd.nextLong();
+ 
     }
     
     public void open() throws IOException {
@@ -179,6 +159,148 @@ public class StratumConnection
         sendMessage(resultNode);          
         
     }
+    
+    final private Object lock = new Object();
+    
+    public ServerWork getStratumWork() {
+        
+        ServerWork result = null;
+        
+        synchronized(lock) {
+            
+            while ((result = workQueue.pollFirst()) == null) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException ex) {      
+                }                
+            }
+        
+        }
+        
+        return result;
+    }
+    
+    String extranonce2_padding(ServerWork work) {
+        // Update coinbase. Always use an LE encoded nonce2 to fill in values from left to right and prevent overflow errors with small n2sizes
+        
+        String res;
+        
+        res = String.format("%16X", work.extranonce2.get());
+        
+        //res = Long.toHexString(work.extranonce2.get());
+        
+        if (work.extranonce2_size < res.length()) {
+            res = res.substring((int)(res.length() - work.extranonce2_size));
+        } else if (work.extranonce2_size > res.length()) {
+            while (work.extranonce2_size > res.length())
+                res = "00" + res;
+        }
+  
+        return res;
+        
+        //ByteBuffer outputByteBuffer = ByteBuffer.allocate((int) work.extranonce2_size);
+         
+/*
+>>> import struct
+>>> struct.pack(">I",34)  // big-endian
+'\x00\x00\x00"'
+>>> ord('"')
+34
+>>> hex(ord('"'))
+'0x22'
+
+ */        
+    }
+    
+    public byte [] hash256(byte [] a) throws NoSuchAlgorithmException {
+        
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        // hash1 size: 32 bytes
+        byte [] hash1 = digest.digest(a);        
+        
+        digest.reset();
+        
+        // hash2 size: 32 bytes
+        byte [] hash2 = digest.digest(hash1);
+        
+        return hash2;
+        
+        //System.out.println("hash2 len: " + hash2.length);        
+    }    
+    
+    public void getWork() {
+        
+        // Pick the latest job from pool
+        ServerWork work = workQueue.peek();
+        
+        // 1. Increase extranonce2
+        long extranonce2 = work.extranonce2.incrementAndGet();
+        
+        // 2. Build final extranonce
+        String extranonce = work.extraNonce1Str + extranonce2_padding(work);
+        
+        // 3. Put coinbase transaction together
+        String coinbase_bin = work.coinbasePart1 + work.coinbasePart2;
+                // self.coinb1_bin + extranonce + self.coinb2_bin
+        
+        // 4. Calculate coinbase hash
+        byte [] coinbase_hash = hash256( toByteArray(coinbase_bin) );
+    }
+    
+    
+/*
+        
+https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
+
+    def getwork(self, no_midstate=True):
+        '''Miner requests for new getwork'''
+        
+        job = self.last_job # Pick the latest job from pool
+
+        # 1. Increase extranonce2
+        extranonce2 = job.increase_extranonce2()
+        
+        # 2. Build final extranonce
+        extranonce = self.build_full_extranonce(extranonce2)
+        
+        # 3. Put coinbase transaction together
+        coinbase_bin = job.build_coinbase(extranonce)
+        
+        # 4. Calculate coinbase hash
+        coinbase_hash = utils.doublesha(coinbase_bin)
+        
+        # 5. Calculate merkle root
+        merkle_root = binascii.hexlify(utils.reverse_hash(job.build_merkle_root(coinbase_hash)))
+                
+        # 6. Generate current ntime
+        ntime = int(time.time()) + job.ntime_delta
+        
+        # 7. Serialize header
+        block_header = job.serialize_header(merkle_root, ntime, 0)
+
+        # 8. Register job params
+        self.register_merkle(job, merkle_root, extranonce2)
+        
+        # 9. Prepare hash1, calculate midstate and fill the response object
+        header_bin = binascii.unhexlify(block_header)[:64]
+        hash1 = "00000000000000000000000000000000000000000000000000000000000000000000008000000000000000000000000000000000000000000000000000010000"
+
+        result = {'data': block_header,
+                'hash1': hash1}
+        
+        if self.use_old_target:
+            result['target'] = 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffff00000000'
+        elif self.real_target:
+            result['target'] = self.target_hex
+        else:
+            result['target'] = self.target1_hex
+    
+        if calculateMidstate and not (no_midstate or self.no_midstate):
+            # Midstate module not found or disabled
+            result['midstate'] = binascii.hexlify(calculateMidstate(header_bin))
+            
+        return result 
+ */    
 
     public void close()
     {
@@ -355,6 +477,9 @@ public class StratumConnection
          String workerName;
          String extraNonce2Str;
          
+         long extranonce1;
+         AtomicLong extranonce2  = new AtomicLong(0L);
+         
 
         @Override
         public String toString() {
@@ -382,14 +507,14 @@ public class StratumConnection
         String msgStr = msg.toString();
         
         if (msgStr.contains("\"mining.notify\"") && msgStr.contains("result")) {
-            System.out.println("MESSAGE result - mining.notify");
+            System.out.println("MESSAGE mining.notify (work subscription confirmation)");
             
             // {"error":null,"id":6268754711428788574,"result":[["mining.notify","ae6812eb4cd7735a302a8a9dd95cf71f"],"f8000008",4]}
             
             if (resultNode != null && resultNode instanceof ArrayNode) {
                 ArrayNode arrayNode = (ArrayNode) resultNode;                
                 
-                System.out.println("len: " + arrayNode.size());
+                //System.out.println("len: " + arrayNode.size());
                 
                 for (int i = 0; i < arrayNode.size(); i++) {
                     JsonNode node = arrayNode.get(i);
@@ -407,6 +532,8 @@ public class StratumConnection
             
                 }
             }  
+            
+            miningSubscribed = true;
             
             System.out.println("notifySubscription = " + notifySubscription);
             System.out.println("extraNonce1Str = " + extraNonce1Str);
@@ -428,7 +555,7 @@ public class StratumConnection
             System.out.println();
             return;
         } else if (msgStr.contains("\"mining.notify\"") && msgStr.contains("params")) {
-            System.out.println("MESSAGE result - mining.notify");
+            System.out.println("MESSAGE mining.notify (work push)");
             
             ArrayNode params = (ArrayNode) msg.get("params");
             
@@ -460,6 +587,10 @@ public class StratumConnection
             
             newServerWork.difficulty = this.difficulty;
             
+            if (newServerWork.cleanJobs) {
+                System.out.println("cleanJobs == true! cleaning work queue");
+                workQueue.clear();
+            }
             
             workQueue.add(newServerWork);
             
