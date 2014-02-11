@@ -74,7 +74,7 @@ public class StratumConnection
         connection.miningSubscribe();
 
         
-        Thread.sleep(5000);
+        Thread.sleep(25000);
         
         
         
@@ -273,10 +273,37 @@ public class StratumConnection
         }
     }
     
+     public static class MiningNotify {
+         String jobId;
+         String hashPrevBlock;
+         String coinbasePart1;
+         
+         String extraNonce1Str;
+         long extranonce2_size;         
+         
+         String coinbasePart2;
+         
+         String [] merkleBranches;
+         
+         String version;
+         String nBit;
+         String nTime;
+         
+         boolean cleanJobs;
+
+        @Override
+        public String toString() {
+            return "MiningNotify{" + "jobId=" + jobId + ", hashPrevBlock=" + hashPrevBlock + ", coinbasePart1=" + coinbasePart1 + ", extraNonce1Str=" + extraNonce1Str + ", extranonce2_size=" + extranonce2_size + ", coinbasePart2=" + coinbasePart2 + ", merkleBranches=" + merkleBranches + ", version=" + version + ", nBit=" + nBit + ", nTime=" + nTime + ", cleanJobs=" + cleanJobs + '}';
+        }
+         
+         
+         
+     }    
+    
     private void processInMessage(ObjectNode msg) {
         
         System.out.println("processInMessage " + msg.toString());
- 
+        // https://www.btcguild.com/new_protocol.php
         
         long idx = msg.get("id").asLong();
         
@@ -287,8 +314,10 @@ public class StratumConnection
         
         String msgStr = msg.toString();
         
-        if (msgStr.contains("\"mining.notify\"")) {
-            System.out.println("MESSAGE mining.notify");
+        if (msgStr.contains("\"mining.notify\"") && msgStr.contains("result")) {
+            System.out.println("MESSAGE result - mining.notify");
+            
+            // {"error":null,"id":6268754711428788574,"result":[["mining.notify","ae6812eb4cd7735a302a8a9dd95cf71f"],"f8000008",4]}
             
             if (resultNode != null && resultNode instanceof ArrayNode) {
                 ArrayNode arrayNode = (ArrayNode) resultNode;                
@@ -315,15 +344,64 @@ public class StratumConnection
             System.out.println("notifySubscription = " + notifySubscription);
             System.out.println("extraNonce1Str = " + extraNonce1Str);
             System.out.println("extranonce2_size = " + extranonce2_size);
+            System.out.println();
             
             return;
         } else if (msgStr.contains("\"mining.set_difficulty\"")) {
             System.out.println("MESSAGE mining.set_difficulty");
+            // {"params":[256],"id":null,"method":"mining.set_difficulty"}
             
+            ArrayNode paramsNode = (ArrayNode) msg.get("params");
             
+            long newDifficulty = paramsNode.get(0).asLong();
             
-            
+            System.out.println("difficulty: " + newDifficulty);
+            System.out.println();
             return;
+        } else if (msgStr.contains("\"mining.notify\"") && msgStr.contains("params")) {
+            System.out.println("MESSAGE result - mining.notify");
+            
+            ArrayNode params = (ArrayNode) msg.get("params");
+            
+            //{"params":[
+            // "178a",
+            // "ce2e706306028f9e215c14944c9369b229492e4d70ee2fe6759dae2fbef68114",
+            // "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff270398f100062f503253482f04454dfa5208",
+            // "0d2f7374726174756d506f6f6c2f000000000100b4f135010000001976a914cc31a98aba0c51cd8f355e35adaa86011c0a2a4a88ac00000000",
+            // [],
+            // "00000002",
+            // "1b01a0e9",
+            // "52fa4d3e",
+            // true],
+            // "id":null,"method":"mining.notify"}
+            
+            MiningNotify notify = new MiningNotify();
+            notify.jobId = params.get(0).asText();
+            notify.hashPrevBlock = params.get(1).asText();
+            notify.coinbasePart1 = params.get(2).asText();
+            notify.coinbasePart2 = params.get(3).asText();
+            
+            notify.version = params.get(5).asText();
+            notify.nBit = params.get(6).asText();
+            notify.nTime = params.get(7).asText();
+            notify.cleanJobs = params.get(8).asBoolean();
+            
+/*            
+params[0] = Job ID. This is included when miners submit a results so work can be matched with proper transactions.
+params[1] = Hash of previous block. Used to build the header.
+params[2] = Coinbase (part 1). The miner inserts ExtraNonce1 and ExtraNonce2 after this section of the coinbase.
+params[3] = Coinbase (part 2). The miner appends this after the first part of the coinbase and the two ExtraNonce values.
+params[4][] = List of merkle branches. The coinbase transaction is hashed against the merkle branches to build the final merkle root.
+params[5] = Bitcoin block version, used in the block header.
+params[6] = nBit, the encoded network difficulty. Used in the block header.
+params[7] = nTime, the current time. nTime rolling should be supported, but should not increase faster than actual time.
+params[8] = Clean Jobs. If true, miners should abort their current work and immediately use the new job. If false, they can still use the current job, but should move to the new one after exhausting the current nonce range.             
+*/
+            
+            
+            System.out.println(notify.toString());
+            System.out.println();
+            return;            
         }
         
         
@@ -337,11 +415,7 @@ public class StratumConnection
         //System.out.println("method: " + method);
         
         
-        
-        
-        System.out.println(resultNode);
-        
-        System.out.println(resultNode.getClass().getCanonicalName());
+         
         
 /*
  
