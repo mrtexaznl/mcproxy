@@ -24,9 +24,10 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.diablominer.DiabloMiner.DiabloMiner;
 import com.diablominer.DiabloMiner.DeviceState.DeviceState.ExecutionState;
+import com.diablominer.DiabloMiner.MinerInterface;
 
 public abstract class NetworkState {
-	DiabloMiner diabloMiner;
+	MinerInterface diabloMiner;
 
 	URL queryUrl;
 	String user;
@@ -50,7 +51,7 @@ public abstract class NetworkState {
 	public static final byte CHAIN_BITCOIN = 0;
 	public static final byte CHAIN_LITECOIN = 1;
 
-	public NetworkState(DiabloMiner diabloMiner, URL queryUrl, String user, String pass, byte hostChain) {
+	public NetworkState(MinerInterface diabloMiner, URL queryUrl, String user, String pass, byte hostChain) {
 		this.diabloMiner = diabloMiner;
 		this.queryUrl = queryUrl;
 		this.user = user;
@@ -71,7 +72,7 @@ public abstract class NetworkState {
 		sendQueue.add(workState);
 	}
 
-	public DiabloMiner getDiabloMiner() {
+	public MinerInterface getDiabloMiner() {
 		return diabloMiner;
 	}
 

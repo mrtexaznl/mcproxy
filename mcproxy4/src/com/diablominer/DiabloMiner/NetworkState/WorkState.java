@@ -20,6 +20,7 @@ package com.diablominer.DiabloMiner.NetworkState;
 
 import com.diablominer.DiabloMiner.DiabloMiner;
 import com.diablominer.DiabloMiner.DeviceState.DeviceState.ExecutionState;
+import com.diablominer.DiabloMiner.MinerInterface;
 
 public class WorkState {
 	final int[] data = new int[32];
@@ -32,7 +33,7 @@ public class WorkState {
 	boolean rollNTimeEnable;
 	int rolledNTime;
 
-	DiabloMiner diabloMiner;
+	MinerInterface diabloMiner;
 	NetworkState networkState;
 	ExecutionState executionState;
 

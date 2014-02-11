@@ -48,7 +48,7 @@ import com.diablominer.DiabloMiner.DeviceState.GPUHardwareType;
 import com.diablominer.DiabloMiner.NetworkState.JSONRPCNetworkState;
 import com.diablominer.DiabloMiner.NetworkState.NetworkState;
 
-public class DiabloMiner {
+public class DiabloMiner implements MinerInterface {
 	public final static long TWO32 = 4294967295L;
 	public final static long TIME_OFFSET = 7500;
 

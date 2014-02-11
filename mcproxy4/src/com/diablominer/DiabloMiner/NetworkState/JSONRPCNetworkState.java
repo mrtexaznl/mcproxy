@@ -41,6 +41,7 @@ import org.codehaus.jackson.node.ObjectNode;
 
 import com.diablominer.DiabloMiner.DiabloMiner;
 import com.diablominer.DiabloMiner.DeviceState.DeviceState.ExecutionState;
+import com.diablominer.DiabloMiner.MinerInterface;
 
 public class JSONRPCNetworkState extends NetworkState {
 	URL longPollUrl;
@@ -58,7 +59,7 @@ public class JSONRPCNetworkState extends NetworkState {
 
 	final ObjectMapper mapper = new ObjectMapper();
 
-	public JSONRPCNetworkState(DiabloMiner diabloMiner, URL queryUrl, String user, String pass, byte hostChain) {
+	public JSONRPCNetworkState(MinerInterface diabloMiner, URL queryUrl, String user, String pass, byte hostChain) {
 		super(diabloMiner, queryUrl, user, pass, hostChain);
 		this.userPass = "Basic " + Base64.encodeBase64String((user + ":" + pass).getBytes()).trim().replace("\r\n", "");
 
