@@ -1,5 +1,6 @@
 package org.mediterraneancoin.proxy;
 
+import java.io.IOException;
 import java.net.Socket;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -14,11 +15,14 @@ import java.util.Random;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
-import org.json.JSONObject;
-import org.json.JSONArray;
+ 
 
 import org.apache.commons.codec.binary.Hex;
 import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.JsonNodeFactory;
 
 
 public class StratumConnection
@@ -29,7 +33,7 @@ public class StratumConnection
      * from the old one are certainly gone.  Also, helps with switching nodes.
      * This way, we reject resumes from other runs.
      */
-    public static final String RUNTIME_SESSION=HexUtil.sha256("" + new Random().nextLong());
+    //public static final String RUNTIME_SESSION=HexUtil.sha256("" + new Random().nextLong());
 
     //private StratumServer server;
     private Socket sock;
@@ -41,22 +45,52 @@ public class StratumConnection
     //private Config config;
    
     private byte[] extranonce1;
+    
+    private String extraNonce1Str;
+    private long extranonce2_size;
 
     //private UserSessionData user_session_data;
     
     private AtomicLong next_request_id=new AtomicLong(10000);
 
-    private LinkedBlockingQueue<JSONObject> out_queue = new LinkedBlockingQueue<JSONObject>();
-    private Random rnd;
+    private LinkedBlockingQueue<ObjectNode> out_queue = new LinkedBlockingQueue<ObjectNode>();
+    private SecureRandom rnd;
     
-    private long get_client_id=-1;
+    static final ObjectMapper mapper = new ObjectMapper();
+    
+    private long id = -1;
     private String client_version;
+    
+    String serverAddress;
+    int port;
+    
+    String notifySubscription;
+    
+    public static void main(String [] arg) throws IOException, InterruptedException {
+        StratumConnection connection = new StratumConnection("node4.mediterraneancoin.org", 3333, "1");
+        
+        connection.open();
+        
+        connection.miningSubscribe();
+
+        
+        Thread.sleep(5000);
+        
+        
+        
+        //"{\"id\": 1, \"method\": \"mining.subscribe\", \"params\": []}\\n"
+        //ObjectNode o = new ObjectNode(JsonNodeFactory.instance)
+        
+        
+    }
 
     public StratumConnection(String serverAddress, int port, /*Socket sock,*/ String connection_id)
     {
         //this.server = server;
         //this.config = server.getConfig();
-        this.sock = sock;
+        this.serverAddress = serverAddress;
+        this.port = port;
+        
         this.connection_id = connection_id;
 
         open=true;
@@ -66,9 +100,29 @@ public class StratumConnection
         //Get from user session for now.  Might do something fancy with resume later.
         //extranonce1=UserSessionData.getExtranonce1();
 
-        new OutThread().start();
-        new InThread().start();
+        rnd = new SecureRandom();
 
+        id = rnd.nextLong();
+    }
+    
+    public void open() throws IOException {
+        this.sock = new Socket(serverAddress, port);        
+        
+        new OutThread().start();
+        new InThread().start();        
+    }
+    
+    public void miningSubscribe() {
+        ObjectNode resultNode = mapper.createObjectNode();
+        // {"id": 1, "method": "mining.subscribe", "params": []}\n
+        resultNode.put("id", id );
+        resultNode.put("method", "mining.subscribe");    
+        
+        resultNode.putArray("params");
+        
+        System.out.println(resultNode.asText());
+        
+        sendMessage(resultNode);        
     }
 
     public void close()
@@ -96,7 +150,7 @@ public class StratumConnection
         last_network_action.set(System.nanoTime());
     }
 
-    public void sendMessage(JSONObject msg)
+    public void sendMessage(ObjectNode msg)
     {
         try
         {
@@ -108,11 +162,11 @@ public class StratumConnection
         }
     }
 
-
-    public void sendRealJob(JSONObject block_template, boolean clean)
+/*
+    public void sendRealJob(ObjectNode block_template, boolean clean)
         throws Exception
     {
-
+       
         if (user_session_data == null) return;
         if (!mining_subscribe) return;
 
@@ -123,11 +177,12 @@ public class StratumConnection
         user_session_data.saveJobInfo(job_id, ji);
 
         JSONObject msg = ji.getMiningNotifyMessage(clean);
+    
 
         sendMessage(msg);
 
     }
-
+*/
 
 
 
@@ -149,7 +204,7 @@ public class StratumConnection
                     //Using poll rather than take so this thread will
                     //exit if the connection is closed.  Otherwise,
                     //it would wait forever on this queue
-                    JSONObject msg = out_queue.poll(30, TimeUnit.SECONDS);
+                    ObjectNode msg = out_queue.poll(30, TimeUnit.SECONDS);
                     if (msg != null)
                     {
 
@@ -197,7 +252,7 @@ public class StratumConnection
                     line = line.trim();
                     if (line.length() > 0)
                     {
-                        JSONObject msg = new JSONObject(line);
+                        ObjectNode msg = (ObjectNode) mapper.readTree(line);
                         System.out.println("In: " + msg.toString());
                         processInMessage(msg);
                     }
@@ -217,8 +272,95 @@ public class StratumConnection
 
         }
     }
+    
+    private void processInMessage(ObjectNode msg) {
+        
+        System.out.println("processInMessage " + msg.toString());
+ 
+        
+        long idx = msg.get("id").asLong();
+        
+        JsonNode errorNode = msg.get("error");
+        
+        
+        JsonNode resultNode = msg.get("result");
+        
+        String msgStr = msg.toString();
+        
+        if (msgStr.contains("\"mining.notify\"")) {
+            System.out.println("MESSAGE mining.notify");
+            
+            if (resultNode != null && resultNode instanceof ArrayNode) {
+                ArrayNode arrayNode = (ArrayNode) resultNode;                
+                
+                System.out.println("len: " + arrayNode.size());
+                
+                for (int i = 0; i < arrayNode.size(); i++) {
+                    JsonNode node = arrayNode.get(i);
+                    
+                    //System.out.println(i + " - " + node.toString());
+                    
+                    if (node instanceof ArrayNode && node.toString().contains("mining.notify")) {
+                        
+                        notifySubscription = ((ArrayNode) node).get(1).asText();
+                    } else if (i == 1) {
+                        extraNonce1Str = node.asText();
+                    } else if (i == 2) {
+                        extranonce2_size = node.asLong();
+                    }
+            
+                }
+            }  
+            
+            System.out.println("notifySubscription = " + notifySubscription);
+            System.out.println("extraNonce1Str = " + extraNonce1Str);
+            System.out.println("extranonce2_size = " + extranonce2_size);
+            
+            return;
+        } else if (msgStr.contains("\"mining.set_difficulty\"")) {
+            System.out.println("MESSAGE mining.set_difficulty");
+            
+            
+            
+            
+            return;
+        }
+        
+        
+        
 
-    private void processInMessage(JSONObject msg)
+        //msg.
+        
+        //String method = msg.get("method").asText();
+        
+        
+        //System.out.println("method: " + method);
+        
+        
+        
+        
+        System.out.println(resultNode);
+        
+        System.out.println(resultNode.getClass().getCanonicalName());
+        
+/*
+ 
+Out: {"id":6268754711428788574,"method":"mining.subscribe","params":[]}
+In: {"error":null,"id":6268754711428788574,"result":[["mining.notify","ae6812eb4cd7735a302a8a9dd95cf71f"],"f8000008",4]}
+processInMessage
+In: {"params":[256],"id":null,"method":"mining.set_difficulty"}
+processInMessage
+In: {"params":["1726","ba80e0721a236fca3b1ea994aca86fb5498d81ece49dd1b32ca2fc3c7295d80c","01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff27036bf100062f503253482f046843fa5208","0d2f7374726174756d506f6f6c2f00000000010001b2c4000000001976a914cc31a98aba0c51cd8f355e35adaa86011c0a2a4a88ac00000000",[],"00000002","1b01a0e9","52fa4361",true],"id":null,"method":"mining.notify"}
+processInMessage
+In: {"params":["1727","ba80e0721a236fca3b1ea994aca86fb5498d81ece49dd1b32ca2fc3c7295d80c","01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff27036bf100062f503253482f048643fa5208","0d2f7374726174756d506f6f6c2f00000000010001b2c4000000001976a914cc31a98aba0c51cd8f355e35adaa86011c0a2a4a88ac00000000",[],"00000002","1b01a0e9","52fa437f",false],"id":null,"method":"mining.notify"}
+processInMessage
+ */        
+        
+        
+    }
+
+    /*
+    private void processInMessage(ObjectNode msg)
         throws Exception
     {
         long idx = msg.optLong("id",-1);
@@ -387,7 +529,7 @@ public class StratumConnection
         sendMessage(msg);
         
     }
-
+*/
 
 }
 
