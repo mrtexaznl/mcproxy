@@ -22,6 +22,9 @@ public class StratumThread implements Runnable {
     private static long minDeltaTime = 200; // ms
     private static int minQueueLength = 4;    
     
+    //static String workerName;
+    //private static String workerPassword;
+    
     private long lastGetwork;
     private long localMinDeltaTime;    
     
@@ -45,6 +48,7 @@ public class StratumThread implements Runnable {
     public void start() {
         
         stratumConnection = StratumConnection.getInstance();
+                
         
         new Thread(this).start();
         
@@ -304,7 +308,6 @@ public class StratumThread implements Runnable {
     public static void setMinQueueLength(int minQueueLength) {
         StratumThread.minQueueLength = minQueueLength;
     }
-
-    
+ 
     
 }

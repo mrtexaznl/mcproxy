@@ -33,6 +33,9 @@ public class HttpServer {
         String bindAddress = "localhost";
         localport = 8080;        
 
+        String workerName = "worker";
+        String workerPassword = "12345";
+        
         int i = 0;
         
         long minDeltaTime = 50;         
@@ -44,6 +47,12 @@ public class HttpServer {
              if (args[i].equals("-s")) {
                  i++;
                  hostname = args[i];
+             } else if (args[i].equals("-u")) {
+                 i++;
+                 workerName = args[i];
+             } else if (args[i].equals("-P")) {
+                 i++;
+                 workerPassword = args[i];
              } else if (args[i].equals("-p")) {
                  i++;
                  port = Integer.parseInt(args[i]);
@@ -67,6 +76,8 @@ public class HttpServer {
                            "-l: local proxy port (default: 8080)\n" + 
                            "-t: min delta time (default: 50 ms)\n" + 
                            "-m: mininum queue length (default: 4)\n" + 
+                           "-u: worker username\n" +
+                           "-P: worker password\n" +
                            "-v: verbose"
                            );
                    return;                 
@@ -77,12 +88,14 @@ public class HttpServer {
              i++;
          }       
         
-        System.out.println("MediterraneanCoin Proxy3");
+        System.out.println("MediterraneanCoin Proxy4");
         System.out.println("parameters:\n" + 
                 "wallet hostname: " + hostname + "\n" +
                 "wallet port: " + port + "\n" +
                 "bind to local address: " + bindAddress + "\n" +
-                "local proxy port: " + localport + "\n"
+                "local proxy port: " + localport + "\n" +
+                "worker username: " + workerName + "\n" +
+                "worker password: " + workerPassword + "\n"
                 );
  
         int cores = Runtime.getRuntime().availableProcessors();
@@ -136,13 +149,7 @@ public class HttpServer {
         } else {
             
             handler.addServletWithMapping(McproxyStratumServlet.class, "/*");        
-
-            McproxyStratumServlet.hostname = hostname;
-            McproxyStratumServlet.localport = localport;
-            McproxyStratumServlet.port = port;
-
-            McproxyStratumServlet.url = new URL("http", hostname, port, "/");        
-            McproxyStratumServlet.utils = new RPCUtils(McproxyStratumServlet.url, "", "");                    
+           
             
         }
         
@@ -165,7 +172,13 @@ public class HttpServer {
                 Thread.sleep(250);
             }
             
-        } else {            
+        } else {         
+            StratumConnection instance = StratumConnection.getInstance();
+            
+            instance.open(hostname, port);
+            
+            instance.sendWorkerAuthorization(workerName, workerPassword);
+             
             
             StratumThread [] stratumThreads = new StratumThread[cores];        
             
