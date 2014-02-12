@@ -153,7 +153,39 @@ public class StratumConnection
         
     }
     
+    /**
+     * the worker which submits this work, must update the nTime and nonce fields
+     * @param work 
+     */    
     public void sendWorkSubmission(ServerWork work) {
+        
+        // 1. Check if blockheader meets requested difficulty
+        // NOTE: this is done previously
+        
+        // 2. Lookup for job and extranonce used for creating given block header
+        // (job, extranonce2) = self.get_job_from_header(header)
+        // job, extranonce2 are inside work
+
+
+        // 3. Format extranonce2 to hex string
+        //extranonce2_hex = binascii.hexlify(self.extranonce2_padding(extranonce2))
+        
+        String extranonce2_hex = extranonce2_padding(work);
+
+        // 4. Parse ntime and nonce from header
+        //ntimepos = 17*8 # 17th integer in datastring
+        //noncepos = 19*8 # 19th integer in datastring
+        //ntime = header[ntimepos:ntimepos+8]
+        //nonce = header[noncepos:noncepos+8]
+        //work.nTime
+        //work.nonce
+                
+        
+        
+            
+        // 5. Submit share to the pool
+        //return self.f.rpc('mining.submit', [worker_name, job.job_id, extranonce2_hex, ntime, nonce])        
+                
         
         ObjectNode resultNode = mapper.createObjectNode();
         
@@ -161,7 +193,7 @@ public class StratumConnection
         
         putArray.add(work.workerName);
         putArray.add(work.jobId);
-        putArray.add(work.extraNonce2Str);
+        putArray.add(extranonce2_hex);
         putArray.add(work.nTime);
         putArray.add(work.nonce);
         
@@ -169,7 +201,7 @@ public class StratumConnection
         
         resultNode.put("method", "mining.submit");
         
-        System.out.println(resultNode.asText());
+        //System.out.println(resultNode.asText());
         
         sendMessage(resultNode);          
         
@@ -290,15 +322,27 @@ public class StratumConnection
         return result;
     }
     
+    /**
+     * the worker which submits this work, must update the nTime and nonce fields
+     * @param work 
+     */
+    public void submitStratumWork(ServerWork work) {
+        
+        
+
+        
+    }
+    
     public ServerWork getWork() throws NoSuchAlgorithmException, CloneNotSupportedException {
         
         // Pick the latest job from pool
-        ServerWork work = workQueue.peek();
+        ServerWork originalWork = workQueue.peek();
         
-        work = (ServerWork) work.clone();
+        ServerWork work = (ServerWork) originalWork.clone();
         
         // 1. Increase extranonce2
-        long extranonce2 = work.extranonce2.incrementAndGet();
+        long extranonce2 = originalWork.extranonce2.incrementAndGet();
+        work.extranonce2 = new AtomicLong(extranonce2);
         
         // 2. Build final extranonce
         String extranonce = work.extraNonce1Str + extranonce2_padding(work);
@@ -354,8 +398,8 @@ public class StratumConnection
                 merkleRootStr + 
                 String.format("%04X", ntime) +
                 work.nBit +
-                "0000000" +
-                "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
+                "00000000000000" +                
+                "800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
                 
 /*                
     def serialize_header(self, merkle_root, ntime, nonce):
@@ -370,7 +414,9 @@ public class StratumConnection
                 
 */
         // 8. Register job params
-        //self.register_merkle(job, merkle_root, extranonce2)        
+        //self.register_merkle(job, merkle_root, extranonce2)    
+        
+        setDifficulty(work, difficulty);
         
         return work;
     }
@@ -409,8 +455,8 @@ public class StratumConnection
         self.target_hex = binascii.hexlify(utils.uint256_to_str(self.target))
         self.difficulty = new_difficulty
  */    
-    void set_difficulty(ServerWork work, long new_difficulty) {
-        BigInteger dif1 = new BigInteger("0x00000000ffff0000000000000000000000000000000000000000000000000000", 16);
+    void setDifficulty(ServerWork work, long new_difficulty) {
+        BigInteger dif1 = new BigInteger("00000000ffff0000000000000000000000000000000000000000000000000000", 16);
         
         work.target = dif1.divide( BigInteger.valueOf(new_difficulty) );
         
@@ -421,6 +467,8 @@ public class StratumConnection
         for (int i = tbe.length - 1; i >= 0; i--)
             work.target_hex += String.format("%02X", tbe[i]);
         
+        while (work.target_hex.length() < 64)
+            work.target_hex += "00";
         
     }
     
@@ -733,8 +781,15 @@ False]
  */        
 
             ServerWork work = getWork();
+            
+            
+            setDifficulty(work, 256);
+            
 
-            System.out.println(work);            
+            System.out.println(work);         
+            
+            System.out.println(work.target);
+            System.out.println(work.target_hex);
         
         
     }     
