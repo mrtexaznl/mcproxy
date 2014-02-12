@@ -15,6 +15,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.mediterraneancoin.miner.SuperHasher;
+import org.mediterraneancoin.proxy.StratumConnection.ServerWork;
 import org.mediterraneancoin.proxy.net.RPCUtils;
 import static org.mediterraneancoin.proxy.net.RPCUtils.tohex;
 import org.mediterraneancoin.proxy.net.WorkState;
@@ -44,8 +45,10 @@ public class McproxyHandler extends AbstractHandler {
         String sentData;
         String dataFromWallet;
         
-        long timestamp;        
+        long timestamp = System.currentTimeMillis();        
         String answer;
+        
+        ServerWork serverWork;
     }       
 
     @Override

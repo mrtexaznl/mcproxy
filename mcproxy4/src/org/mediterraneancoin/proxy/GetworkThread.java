@@ -163,7 +163,13 @@ public class GetworkThread implements Runnable {
             if (DEBUG)
                 System.out.println("queue.size(): " + queue.size());
             
-            queue.poll();
+            SessionStorage item = queue.poll();
+            
+            item.work.setUtils(null);
+            item.work = null;
+            item.serverWork.extranonce2 = null;
+            item.serverWork = null;
+            
         }
                     
     }    
