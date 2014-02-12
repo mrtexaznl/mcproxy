@@ -3,6 +3,7 @@ package org.mediterraneancoin.proxy;
 import java.io.IOException;
 import java.net.Socket;
 import java.io.PrintStream;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -373,7 +374,20 @@ public class StratumConnection
         self.target_hex = binascii.hexlify(utils.uint256_to_str(self.target))
         self.difficulty = new_difficulty
  */    
-    
+    void set_difficulty(ServerWork work, long new_difficulty) {
+        BigInteger dif1 = new BigInteger("0x00000000ffff0000000000000000000000000000000000000000000000000000", 16);
+        
+        work.target = dif1.divide( BigInteger.valueOf(new_difficulty) );
+        
+        byte [] tbe = work.target.toByteArray(); // big endian
+        
+        work.target_hex = "";
+        
+        for (int i = tbe.length - 1; i >= 0; i--)
+            work.target_hex += String.format("%2X", tbe[i]);
+        
+        
+    }
     
 /*
         
@@ -608,6 +622,8 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
          AtomicLong extranonce2  = new AtomicLong(0L);
          
          long ntime_delta;
+        private BigInteger target;
+        private String target_hex;
 
         @Override
         public String toString() {
