@@ -61,7 +61,7 @@ public class StratumConnection
         
         StratumConnection connection = new StratumConnection("node4.mediterraneancoin.org", 3333, "1");
         
-        if (false) {
+        if (true) {
             connection.doTests();
             return;
         }
@@ -204,10 +204,10 @@ public class StratumConnection
         
         //res = Long.toHexString(work.extranonce2.get());
         
-        if (work.extranonce2_size < res.length()) {
-            res = res.substring((int)(res.length() - work.extranonce2_size));
-        } else if (work.extranonce2_size > res.length()) {
-            while (work.extranonce2_size > res.length())
+        if (work.extranonce2_size * 2 < res.length()) {
+            res = res.substring((int)(res.length() - work.extranonce2_size * 2));
+        } else if (work.extranonce2_size * 2 > res.length()) {
+            while (work.extranonce2_size * 2 > res.length())
                 res = "00" + res;
         }
   
@@ -275,14 +275,16 @@ public class StratumConnection
     }
     
     byte [] reverseHash(byte [] barr) {
-        if (barr.length % 2 != 0)
-            throw new RuntimeException("barr.length() % 2 != 0");        
+        if (barr.length % 4 != 0)
+            throw new RuntimeException("barr.length() % 4 != 0");        
         
         byte [] result = new byte[barr.length];
         
-        for (int i = 0; i < barr.length; i += 2) {
-           result[i] = barr[i+1];
-           result[i+1] = barr[i];
+        for (int i = 0; i < barr.length; i += 4) {
+           result[i] = barr[i+3];
+           result[i+1] = barr[i+2];
+           result[i+2] = barr[i+1];
+           result[i+3] = barr[i];
         }
         
         return result;
@@ -313,7 +315,24 @@ public class StratumConnection
         byte [] merkle_root = reverseHash ( buildMerkleRoot(work, coinbase_hash)  );
         String merkleRootStr = toHexString( merkle_root );
         
-/*        
+/*      
+        # 3. Put coinbase transaction together
+        coinbase_bin = job.build_coinbase(extranonce)
+        
+        # 4. Calculate coinbase hash
+        coinbase_hash = utils.doublesha(coinbase_bin)
+        
+        # 5. Calculate merkle root
+        merkle_root = binascii.hexlify(utils.reverse_hash(job.build_merkle_root(coinbase_hash)))
+
+        # 6. Generate current ntime
+        ntime = int(time.time()) + job.ntime_delta
+        
+        # 7. Serialize header
+        block_header = job.serialize_header(merkle_root, ntime, 0)
+        
+        * 
+ * 
      def build_merkle_root(self, coinbase_hash):
         merkle_root = coinbase_hash
         for h in self.merkle_branch:
@@ -335,7 +354,7 @@ public class StratumConnection
                 merkleRootStr + 
                 String.format("%04X", ntime) +
                 work.nBit +
-                "0000" +
+                "0000000" +
                 "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
                 
 /*                
@@ -660,8 +679,62 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
         
      }
      
-    private void doTests() {
+    private void doTests() throws NoSuchAlgorithmException, CloneNotSupportedException {
         
+// 'mining.notify', u'ae6812eb4cd7735a302a8a9dd95cf71f'], u'f800003e', 4        
+            this.extraNonce1Str = "f800003e";
+            this.extranonce2_size = 4;
+            this.difficulty = 256;
+        
+            ServerWork newServerWork = new ServerWork();
+            newServerWork.jobId = "281c";
+            newServerWork.hashPrevBlock = "de68011079eef077f92c231a08cc08c411ced9d385f8d4c9adc961fc22c6c533";
+            newServerWork.coinbasePart1 = "01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff27030cf700062f503253482f044a92fb5208";
+            newServerWork.coinbasePart2 = "0d2f7374726174756d506f6f6c2f000000000100adf4ca010000001976a914cc31a98aba0c51cd8f355e35adaa86011c0a2a4a88ac00000000";
+             
+            newServerWork.merkleBranches = new String[0];
+
+            newServerWork.extraNonce1Str = this.extraNonce1Str;
+            newServerWork.extranonce2_size = this.extranonce2_size;            
+                        
+            newServerWork.version = "00000002";
+            newServerWork.nBit = "1b01b269";
+            newServerWork.nTime = "52fb9247";
+            newServerWork.cleanJobs = false;
+            
+            newServerWork.difficulty = this.difficulty;
+            
+            long unixTime = System.currentTimeMillis() / 1000L;        
+            newServerWork.ntime_delta = Long.parseLong(newServerWork.nTime, 16) - unixTime;
+            
+            if (newServerWork.cleanJobs) {
+                System.out.println("cleanJobs == true! cleaning work queue");
+                workQueue.clear();
+            }
+            
+            workQueue.add(newServerWork);
+        
+            
+/*
+[u'281c',
+ u'de68011079eef077f92c231a08cc08c411ced9d385f8d4c9adc961fc22c6c533', 
+u'01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff27030cf700062f503253482f044a92fb5208', 
+u'0d2f7374726174756d506f6f6c2f000000000100adf4ca010000001976a914cc31a98aba0c51cd8f355e35adaa86011c0a2a4a88ac00000000', 
+[], 
+u'00000002', 
+u'1b01b269',
+u'52fb9247',
+False]
+ * 
+ * 
+"data": "00000002bcc8c807468a23955657c90f74ba988d72b0762190f3bb7cb58b611d30a43570708b3f03aa00d5dcdbb4a874adbe748e218e80b120535605c86aa4efcc87d84152fb8e3e1b01b26900000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000", 
+"target": "0000000000000000000000000000000000000000000000000000ffff00000000"}
+* 
+ */        
+
+            ServerWork work = getWork();
+
+            System.out.println(work);            
         
         
     }     
