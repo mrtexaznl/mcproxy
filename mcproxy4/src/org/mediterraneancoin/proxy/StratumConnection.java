@@ -24,6 +24,8 @@ import org.codehaus.jackson.node.ArrayNode;
 
 public class StratumConnection
 {
+
+
  
     private Socket sock;
     private String connection_id;
@@ -55,8 +57,15 @@ public class StratumConnection
     
     private LinkedBlockingDeque<ServerWork> workQueue = new LinkedBlockingDeque<ServerWork>();
     
-    public static void main(String [] arg) throws IOException, InterruptedException {
+    public static void main(String [] arg) throws IOException, InterruptedException, NoSuchAlgorithmException, CloneNotSupportedException {
+        
         StratumConnection connection = new StratumConnection("node4.mediterraneancoin.org", 3333, "1");
+        
+        if (false) {
+            connection.doTests();
+            return;
+        }
+        
         
         connection.open();
         
@@ -68,8 +77,13 @@ public class StratumConnection
         
         Thread.sleep(300);
         
+        while (connection.workQueue.size() == 0) {
+            Thread.sleep(50);
+        }
+        ServerWork work = connection.getWork();
         
-
+        System.out.println(work);
+        System.out.println("HEADER: " + work.block_header);
         
         Thread.sleep(25000);
         
@@ -186,7 +200,7 @@ public class StratumConnection
         
         String res;
         
-        res = String.format("%16X", work.extranonce2.get());
+        res = String.format("%016X", work.extranonce2.get());
         
         //res = Long.toHexString(work.extranonce2.get());
         
@@ -235,7 +249,7 @@ public class StratumConnection
         
         for (int i = 0; i < barr.length; i++) {
             
-            result += String.format("%2X", barr[i]);
+            result += String.format("%02X", barr[i]);
                         
         }
         
@@ -274,10 +288,12 @@ public class StratumConnection
         return result;
     }
     
-    public void getWork() throws NoSuchAlgorithmException {
+    public ServerWork getWork() throws NoSuchAlgorithmException, CloneNotSupportedException {
         
         // Pick the latest job from pool
         ServerWork work = workQueue.peek();
+        
+        work = (ServerWork) work.clone();
         
         // 1. Increase extranonce2
         long extranonce2 = work.extranonce2.incrementAndGet();
@@ -313,11 +329,11 @@ public class StratumConnection
              
         // 7. Serialize header
         //block_header = job.serialize_header(merkle_root, ntime, 0)
-        String block_header = 
+        work.block_header = 
                 work.version +
                 work.hashPrevBlock +
                 merkleRootStr + 
-                String.format("%4X", ntime) +
+                String.format("%04X", ntime) +
                 work.nBit +
                 "0000" +
                 "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
@@ -337,7 +353,7 @@ public class StratumConnection
         // 8. Register job params
         //self.register_merkle(job, merkle_root, extranonce2)        
         
-        
+        return work;
     }
     
     byte [] concat(byte [] a, byte [] b) {
@@ -384,7 +400,7 @@ public class StratumConnection
         work.target_hex = "";
         
         for (int i = tbe.length - 1; i >= 0; i--)
-            work.target_hex += String.format("%2X", tbe[i]);
+            work.target_hex += String.format("%02X", tbe[i]);
         
         
     }
@@ -591,7 +607,7 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
         }
     }
     
-     public static class ServerWork {
+     public static class ServerWork implements Cloneable {
          String jobId;
          String hashPrevBlock;
          String coinbasePart1;
@@ -622,19 +638,33 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
          AtomicLong extranonce2  = new AtomicLong(0L);
          
          long ntime_delta;
-        private BigInteger target;
-        private String target_hex;
+         
+         // for getwork
+         
+         BigInteger target;
+         String target_hex;
+         String block_header;
 
         @Override
         public String toString() {
-            return "ServerWork{" + "jobId=" + jobId + ", hashPrevBlock=" + hashPrevBlock + ", coinbasePart1=" + coinbasePart1 + ", extraNonce1Str=" + extraNonce1Str + ", extranonce2_size=" + extranonce2_size + ", coinbasePart2=" + coinbasePart2 + ", merkleBranches=" + merkleBranches + ", version=" + version + ", nBit=" + nBit + ", nTime=" + nTime + ", cleanJobs=" + cleanJobs + ", difficulty=" + difficulty + ", timestamp=" + timestamp + '}';
+            return "ServerWork{" + "jobId=" + jobId + ", hashPrevBlock=" + hashPrevBlock + ", coinbasePart1=" + coinbasePart1 + ", extraNonce1Str=" + extraNonce1Str + ", extranonce2_size=" + extranonce2_size + ", coinbasePart2=" + coinbasePart2 + ", merkleBranches=" + merkleBranches + ", version=" + version + ", nBit=" + nBit + ", nTime=" + nTime + ", cleanJobs=" + cleanJobs + ", difficulty=" + difficulty + ", timestamp=" + timestamp + ", nonce=" + nonce + ", workerName=" + workerName + ", extraNonce2Str=" + extraNonce2Str + ", extranonce1=" + extranonce1 + ", extranonce2=" + extranonce2 + ", ntime_delta=" + ntime_delta + ", target=" + target + ", target_hex=" + target_hex + ", block_header=" + block_header + '}';
         }
 
 
-         
-         
-         
-     }    
+        @Override
+        public Object clone() throws CloneNotSupportedException {
+            return super.clone();  
+        }
+ 
+        
+        
+     }
+     
+    private void doTests() {
+        
+        
+        
+    }     
     
     private void processInMessage(ObjectNode msg) {
         
