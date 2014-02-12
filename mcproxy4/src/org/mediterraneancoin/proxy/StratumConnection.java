@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -15,8 +14,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import java.security.SecureRandom;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
  
@@ -25,10 +22,17 @@ import org.codehaus.jackson.node.ArrayNode;
 public class StratumConnection
 {
 
-
+    private static StratumConnection instance;
+    
+    public static synchronized StratumConnection getInstance() {
+        if (instance == null)
+            instance = new StratumConnection();
+        
+        return instance;
+    }
  
     private Socket sock;
-    private String connection_id;
+
     private AtomicLong last_network_action;
     private volatile boolean open;
     private volatile boolean miningSubscribed;
@@ -59,7 +63,7 @@ public class StratumConnection
     
     public static void main(String [] arg) throws IOException, InterruptedException, NoSuchAlgorithmException, CloneNotSupportedException {
         
-        StratumConnection connection = new StratumConnection("node4.mediterraneancoin.org", 3333, "1");
+        StratumConnection connection = new StratumConnection();
         
         if (true) {
             connection.doTests();
@@ -67,7 +71,7 @@ public class StratumConnection
         }
         
         
-        connection.open();
+        connection.open("node4.mediterraneancoin.org", 3333);
         
         connection.sendWorkerAuthorization("mrtexaznl.1", "xxx");
         
@@ -95,27 +99,20 @@ public class StratumConnection
         
     }
 
-    public StratumConnection(String serverAddress, int port,   String connection_id)
+    public StratumConnection()
     {
- 
-        this.serverAddress = serverAddress;
-        this.port = port;
-        
-        this.connection_id = connection_id;
-
-        open=true;
-
-        last_network_action=new AtomicLong(System.nanoTime());
-    
-        //Get from user session for now.  Might do something fancy with resume later.
-        //extranonce1=UserSessionData.getExtranonce1();
-
-        rnd = new SecureRandom();
- 
+        rnd = new SecureRandom(); 
     }
     
-    public void open() throws IOException {
-        this.sock = new Socket(serverAddress, port);        
+    public void open(String serverAddress, int port) throws IOException {
+        this.serverAddress = serverAddress;
+        this.port = port;        
+        
+        this.sock = new Socket(serverAddress, port);       
+        
+        last_network_action=new AtomicLong(System.nanoTime());
+        
+        open=true;
         
         new OutThread().start();
         new InThread().start();        
@@ -622,7 +619,7 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
             }
             catch(Exception e)
             {
-                System.out.println(connection_id + ": " + e);
+                System.out.println( e.toString() );
                 e.printStackTrace();
             }
             finally
@@ -663,7 +660,7 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
             }
             catch(Exception e)
             {
-                System.out.println("" + connection_id + ": " + e);
+                System.out.println(e.toString());
                 e.printStackTrace();
             }
             finally
@@ -946,6 +943,8 @@ processInMessage
         
         
     }
+    
+    
 
     /*
     private void processInMessage(ObjectNode msg)
@@ -1118,6 +1117,38 @@ processInMessage
         
     }
 */
+
+    public boolean isOpen() {
+        return open;
+    }
+
+    public void setOpen(boolean open) {
+        this.open = open;
+    }
+
+    public String getExtraNonce1Str() {
+        return extraNonce1Str;
+    }
+
+    public void setExtraNonce1Str(String extraNonce1Str) {
+        this.extraNonce1Str = extraNonce1Str;
+    }
+
+    public long getExtranonce2_size() {
+        return extranonce2_size;
+    }
+
+    public void setExtranonce2_size(long extranonce2_size) {
+        this.extranonce2_size = extranonce2_size;
+    }
+
+    public long getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(long difficulty) {
+        this.difficulty = difficulty;
+    }
 
 }
 
