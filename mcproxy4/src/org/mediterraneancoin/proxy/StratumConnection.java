@@ -228,7 +228,52 @@ public class StratumConnection
         //System.out.println("hash2 len: " + hash2.length);        
     }    
     
-    public void getWork() {
+    String toHexString(byte [] barr) {
+        
+        String result = "";
+        
+        for (int i = 0; i < barr.length; i++) {
+            
+            result += String.format("%2X", barr[i]);
+                        
+        }
+        
+        return result;
+        
+    }
+    
+    byte [] toByteArray(String bin) {
+        if (bin.length() % 2 != 0)
+            throw new RuntimeException("bin.length() % 2 != 0");
+        
+        byte [] result = new byte[bin.length() / 2];
+        
+        for (int i = 0; i < result.length; i++) {
+            
+            String b = bin.substring(i * 2, (i+1) * 2);
+            
+            result[i] = (byte) (Integer.parseInt(b, 16) & 0xFF);
+            
+        }
+        
+        return result;
+    }
+    
+    byte [] reverseHash(byte [] barr) {
+        if (barr.length % 2 != 0)
+            throw new RuntimeException("barr.length() % 2 != 0");        
+        
+        byte [] result = new byte[barr.length];
+        
+        for (int i = 0; i < barr.length; i += 2) {
+           result[i] = barr[i+1];
+           result[i+1] = barr[i];
+        }
+        
+        return result;
+    }
+    
+    public void getWork() throws NoSuchAlgorithmException {
         
         // Pick the latest job from pool
         ServerWork work = workQueue.peek();
@@ -240,12 +285,94 @@ public class StratumConnection
         String extranonce = work.extraNonce1Str + extranonce2_padding(work);
         
         // 3. Put coinbase transaction together
-        String coinbase_bin = work.coinbasePart1 + work.coinbasePart2;
+        String coinbase_bin = work.coinbasePart1 + extranonce + work.coinbasePart2;
                 // self.coinb1_bin + extranonce + self.coinb2_bin
         
         // 4. Calculate coinbase hash
         byte [] coinbase_hash = hash256( toByteArray(coinbase_bin) );
+        
+        // 5. Calculate merkle root
+        // merkle_root = binascii.hexlify(utils.reverse_hash(job.build_merkle_root(coinbase_hash)))
+        byte [] merkle_root = reverseHash ( buildMerkleRoot(work, coinbase_hash)  );
+        String merkleRootStr = toHexString( merkle_root );
+        
+/*        
+     def build_merkle_root(self, coinbase_hash):
+        merkle_root = coinbase_hash
+        for h in self.merkle_branch:
+            merkle_root = utils.doublesha(merkle_root + h)
+        return merkle_root       
+*/        
+        
+        // 6. Generate current ntime
+        //ntime = int(time.time()) + job.ntime_delta
+        // job.ntime_delta = int(ntime, 16) - int(time.time())         
+        long unixTime = System.currentTimeMillis() / 1000L;               
+        long ntime = unixTime + work.ntime_delta;
+             
+        // 7. Serialize header
+        //block_header = job.serialize_header(merkle_root, ntime, 0)
+        String block_header = 
+                work.version +
+                work.hashPrevBlock +
+                merkleRootStr + 
+                String.format("%4X", ntime) +
+                work.nBit +
+                "0000" +
+                "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
+                
+/*                
+    def serialize_header(self, merkle_root, ntime, nonce):
+        r = self.version
+        r += self.prevhash
+        r += merkle_root
+        r += binascii.hexlify(struct.pack(">I", ntime))
+        r += self.nbits
+        r += binascii.hexlify(struct.pack(">I", nonce))
+        r += '000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000' # padding
+        return r                 
+                
+*/
+        // 8. Register job params
+        //self.register_merkle(job, merkle_root, extranonce2)        
+        
+        
     }
+    
+    byte [] concat(byte [] a, byte [] b) {
+        byte [] result = new byte[a.length + b.length];
+        
+        System.arraycopy(a, 0, result, 0, a.length);
+        
+        System.arraycopy(b,0, result, a.length, b.length);
+        
+        return result;
+    }
+    
+    public byte [] buildMerkleRoot(ServerWork work, byte [] coinbase_hash) throws NoSuchAlgorithmException {
+        byte [] merkle_root = coinbase_hash;
+        
+        for (int i = 0; i < work.merkleBranches.length; i++) {
+            
+            byte [] h = toByteArray( work.merkleBranches[i] );
+            
+            merkle_root = hash256( concat(merkle_root, h) );
+            
+        }
+        
+        return merkle_root;
+    }
+    
+/*
+    def set_difficulty(self, new_difficulty):
+        if self.scrypt_target:
+            dif1 = 0x0000ffff00000000000000000000000000000000000000000000000000000000
+        else:
+            dif1 = 0x00000000ffff0000000000000000000000000000000000000000000000000000
+        self.target = int(dif1 / new_difficulty)
+        self.target_hex = binascii.hexlify(utils.uint256_to_str(self.target))
+        self.difficulty = new_difficulty
+ */    
     
     
 /*
@@ -271,7 +398,7 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
         
         # 5. Calculate merkle root
         merkle_root = binascii.hexlify(utils.reverse_hash(job.build_merkle_root(coinbase_hash)))
-                
+
         # 6. Generate current ntime
         ntime = int(time.time()) + job.ntime_delta
         
@@ -480,6 +607,7 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
          long extranonce1;
          AtomicLong extranonce2  = new AtomicLong(0L);
          
+         long ntime_delta;
 
         @Override
         public String toString() {
@@ -577,6 +705,11 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
             newServerWork.coinbasePart1 = params.get(2).asText();
             newServerWork.coinbasePart2 = params.get(3).asText();
             
+            ArrayNode branches = (ArrayNode) params.get(4);
+            newServerWork.merkleBranches = new String[branches.size()];
+            for (int i = 0; i < branches.size(); i++)
+                newServerWork.merkleBranches[i] = branches.get(i).asText();
+                       
             newServerWork.extraNonce1Str = this.extraNonce1Str;
             newServerWork.extranonce2_size = this.extranonce2_size;
             
@@ -586,6 +719,9 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
             newServerWork.cleanJobs = params.get(8).asBoolean();
             
             newServerWork.difficulty = this.difficulty;
+            
+            long unixTime = System.currentTimeMillis() / 1000L;        
+            newServerWork.ntime_delta = Long.parseLong(newServerWork.nTime, 16) - unixTime;
             
             if (newServerWork.cleanJobs) {
                 System.out.println("cleanJobs == true! cleaning work queue");
