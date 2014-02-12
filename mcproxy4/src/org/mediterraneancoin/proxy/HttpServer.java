@@ -89,7 +89,7 @@ public class HttpServer {
         
         System.out.println("number of detected cores: " + cores);
         
-        GetworkThread [] getworkThreads = new GetworkThread[cores];
+        
  
         QueuedThreadPool threadPool = new QueuedThreadPool(200,16);
        
@@ -121,32 +121,69 @@ public class HttpServer {
 
         
         server.setHandler(handler);
-        handler.addServletWithMapping(McproxyServlet.class, "/*");        
         
-        McproxyServlet.hostname = hostname;
-        McproxyServlet.localport = localport;
-        McproxyServlet.port = port;
+        if (false) {
+            
+            handler.addServletWithMapping(McproxyServlet.class, "/*");        
+
+            McproxyServlet.hostname = hostname;
+            McproxyServlet.localport = localport;
+            McproxyServlet.port = port;
+
+            McproxyServlet.url = new URL("http", hostname, port, "/");        
+            McproxyServlet.utils = new RPCUtils(McproxyServlet.url, "", "");          
         
-        McproxyServlet.url = new URL("http", hostname, port, "/");        
-        McproxyServlet.utils = new RPCUtils(McproxyServlet.url, "", "");            
+        } else {
+            
+            handler.addServletWithMapping(McproxyStratumServlet.class, "/*");        
+
+            McproxyStratumServlet.hostname = hostname;
+            McproxyStratumServlet.localport = localport;
+            McproxyStratumServlet.port = port;
+
+            McproxyStratumServlet.url = new URL("http", hostname, port, "/");        
+            McproxyStratumServlet.utils = new RPCUtils(McproxyStratumServlet.url, "", "");                    
+            
+        }
         
         server.addConnector(connector);
          
-         
-        //McproxyHandler.utils = new RPCUtils(McproxyServlet.url, "", "");      
-        
-         
-        GetworkThread.setMinDeltaTime(minDeltaTime);
-        
-        GetworkThread.setMinQueueLength(4);
-        
-        for (int h = 0; h < getworkThreads.length; h++) {
-            getworkThreads[h] = new GetworkThread(McproxyServlet.url, McproxyServlet.utils);
+          
+        if (false) {
+                  
+            GetworkThread [] getworkThreads = new GetworkThread[cores];
             
-            getworkThreads[h].start();
+            GetworkThread.setMinDeltaTime(minDeltaTime);
+
+            GetworkThread.setMinQueueLength(4);
+
+            for (int h = 0; h < getworkThreads.length; h++) {
+                getworkThreads[h] = new GetworkThread(McproxyServlet.url, McproxyServlet.utils);
+
+                getworkThreads[h].start();
+
+                Thread.sleep(250);
+            }
             
-            Thread.sleep(250);
+        } else {            
+            
+            StratumThread [] stratumThreads = new StratumThread[cores];        
+            
+            StratumThread.setMinDeltaTime(minDeltaTime);
+
+            StratumThread.setMinQueueLength(4);
+
+            for (int h = 0; h < stratumThreads.length; h++) {
+                stratumThreads[h] = new StratumThread();
+
+                stratumThreads[h].start();
+
+                Thread.sleep(250);
+            }
+            
+            
         }
+        
         
         server.start();
          

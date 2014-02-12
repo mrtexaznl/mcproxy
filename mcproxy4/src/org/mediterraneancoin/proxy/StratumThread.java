@@ -260,5 +260,51 @@ public class StratumThread implements Runnable {
         
     }    
     
+
+
+
+    public static boolean isDEBUG() {
+        return DEBUG;
+    }
+
+    public static void setDEBUG(boolean _DEBUG) {
+        DEBUG = _DEBUG;
+    }
+
+    public static long getMinDeltaTime() {
+        return minDeltaTime;
+    }
+
+    public static void setMinDeltaTime(long minDeltaTime) {
+        StratumThread.minDeltaTime = minDeltaTime;
+    }
+
+
+
+    public long getLastGetwork() {
+        return lastGetwork;
+    }
+
+    public void setLastGetwork(long lastGetwork) {
+        this.lastGetwork = lastGetwork;
+    }
+
+    public int getThreadId() {
+        return threadId;
+    }
+
+    public void setThreadId(int threadId) {
+        this.threadId = threadId;
+    }
+
+    public static int getMinQueueLength() {
+        return minQueueLength;
+    }
+
+    public static void setMinQueueLength(int minQueueLength) {
+        StratumThread.minQueueLength = minQueueLength;
+    }
+
+    
     
 }
