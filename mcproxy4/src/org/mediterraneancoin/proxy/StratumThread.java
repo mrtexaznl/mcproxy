@@ -34,6 +34,7 @@ public class StratumThread implements Runnable {
     private static final ConcurrentLinkedQueue<McproxyHandler.SessionStorage> queue = new ConcurrentLinkedQueue<McproxyHandler.SessionStorage>();
     
     private static boolean DEBUG = true;
+    private static final String prefix = "THREAD ";
     
     private static int counter = 0;
     private int threadId; 
@@ -62,7 +63,7 @@ public class StratumThread implements Runnable {
         
         if (now - lastGetwork < localMinDeltaTime) {
             if (DEBUG)
-                System.out.println("too near getWorkFromStratum, skipping; delta = " + (now - lastGetwork) + ", localMinDeltaTime=" + localMinDeltaTime);
+                System.out.println(prefix + "too near getWorkFromStratum, skipping; delta = " + (now - lastGetwork) + ", localMinDeltaTime=" + localMinDeltaTime);
 
                 try {
                     Thread.sleep(localMinDeltaTime - (now - lastGetwork));
@@ -72,7 +73,7 @@ public class StratumThread implements Runnable {
                 return;
         }        
         
-        System.out.println("stratum work request... thread " + threadId);
+        System.out.println(prefix + "stratum work request... thread " + threadId);
         
         SessionStorage storage = new SessionStorage();
         
@@ -86,7 +87,7 @@ public class StratumThread implements Runnable {
         }        
         
         if (storage.serverWork == null || storage.serverWork.block_header == null ) {
-            System.out.println("thread " + threadId + " getting null! Waiting for a while...");
+            System.out.println(prefix + "thread " + threadId + " getting null! Waiting for a while...");
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ex) {
@@ -107,8 +108,8 @@ public class StratumThread implements Runnable {
 
         if (DEBUG) {  
             // data has already been byteswapped
-            System.out.println("data: " + dataFromWallet);              
-            System.out.println("target: " + storage.work.getTarget());
+            System.out.println(prefix + "data: " + dataFromWallet);              
+            System.out.println(prefix + "target: " + storage.work.getTarget());
         }
         
 
@@ -127,7 +128,7 @@ public class StratumThread implements Runnable {
         }
 
         if (DEBUG) { 
-            System.out.println("part1: " + tohex(part1));
+            System.out.println(prefix + "part1: " + tohex(part1));
             System.out.println();                
         }
 
@@ -255,15 +256,15 @@ public class StratumThread implements Runnable {
                 if (DEBUG)
                     System.out.println("to " + localMinDeltaTime + " ms");
                 
-            } else if (queue.size() > /*(int)((minQueueLength * 3.) / 2.)*/ maxQueueLength) {
+            } else if (queue.size() >= /*(int)((minQueueLength * 3.) / 2.)*/ maxQueueLength) {
                 
                 if (DEBUG)
                     System.out.print(threadId + "+++increasing localMinDeltaTime from " + localMinDeltaTime + " ");
                 
                 localMinDeltaTime =  (localMinDeltaTime * 115) / 100;
                 
-                if (localMinDeltaTime > 10000)
-                    localMinDeltaTime = 10000;
+                if (localMinDeltaTime > 3000)
+                    localMinDeltaTime = 3000;
                 
                 if (DEBUG)
                     System.out.println("to " + localMinDeltaTime + " ms");
