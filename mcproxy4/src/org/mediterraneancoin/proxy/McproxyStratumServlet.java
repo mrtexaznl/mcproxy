@@ -201,7 +201,38 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 // 2.1 - verify hash
                 byte [] header = work.getData1();
-                BigInteger hashTarget = SuperHasher.readCompact(header[72], header[73], header[74], header[75]);
+                //BigInteger hashTarget = SuperHasher.readCompact(header[72], header[73], header[74], header[75]);
+                
+                //
+                byte a,  b,  c,  d;
+
+                a = header[72];
+                b = header[73];
+                c = header[74];
+                d = header[75];
+
+
+                int nSize;
+
+                nSize = a & 0xFF;
+
+                boolean negative = (b & 0x80) != 0;
+
+                int nWord = ((b & 0x7F) << 16) + ((c & 0xFF) << 8) + (d & 0xFF);        
+
+                if (DEBUG) {
+                    System.out.println(prefix + "size=" + nSize);
+                    System.out.println(prefix + "negative=" + negative);
+                    System.out.println(prefix + "nWord=" + nWord);
+                }
+
+                BigInteger hashTarget = new BigInteger("" + nWord, 10);      
+
+                hashTarget = hashTarget.shiftLeft( 8 * (nSize -3));                    
+                
+                
+                
+                //
 
                 //System.out.println("hashTarget: " + hashTarget);
                 if (DEBUG)
