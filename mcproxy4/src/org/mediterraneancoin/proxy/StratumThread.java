@@ -117,6 +117,8 @@ public class StratumThread implements Runnable {
             System.out.println(prefix + "target: " + storage.work.getTarget());
         }
         
+        // let's byteswap the target
+        storage.work.setTarget( WorkState.byteSwap( storage.work.getTarget() )  );
 
         SuperHasher hasher = null;
         try {
