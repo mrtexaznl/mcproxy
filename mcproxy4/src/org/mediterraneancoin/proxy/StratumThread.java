@@ -84,10 +84,14 @@ public class StratumThread implements Runnable {
             Logger.getLogger(StratumThread.class.getName()).log(Level.SEVERE, null, ex);
         }        
         
-        WorkState workState = new WorkState(null);
+        if (storage.serverWork == null || storage.serverWork.block_header == null) {
+            System.out.println("thread " + threadId + " returning null!");
+        }
+        
+        storage.work = new WorkState(null);
 
-        workState.parseData( WorkState.byteSwap( storage.serverWork.block_header ) );
-        workState.setTarget(storage.serverWork.target_hex);     
+        storage.work.parseData( WorkState.byteSwap( storage.serverWork.block_header ) );
+        storage.work.setTarget(storage.serverWork.target_hex);     
         
 
         String dataFromWallet = storage.work.getAllDataHex();

@@ -335,6 +335,9 @@ public class StratumConnection
         // Pick the latest job from pool
         ServerWork originalWork = workQueue.peek();
         
+        if (originalWork == null)
+            return null;
+        
         ServerWork work = (ServerWork) originalWork.clone();
         
         // 1. Increase extranonce2

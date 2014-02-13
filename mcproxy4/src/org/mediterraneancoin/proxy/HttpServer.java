@@ -27,13 +27,13 @@ public class HttpServer {
         String hostname;
         int port;
 
-        hostname = "localhost";
-        port = 9372;
+        hostname = "node4.mediterraneancoin.org";
+        port = 3333;
         
         String bindAddress = "localhost";
         localport = 8080;        
 
-        String workerName = "worker";
+        String workerName = "mrtexaznl.1";
         String workerPassword = "12345";
         
         int i = 0;
@@ -179,6 +179,10 @@ public class HttpServer {
             
             instance.sendWorkerAuthorization(workerName, workerPassword);
              
+            instance.sendMiningSubscribe();
+            
+            //DEBUG
+            cores = 1;
             
             StratumThread [] stratumThreads = new StratumThread[cores];        
             
