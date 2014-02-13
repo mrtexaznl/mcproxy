@@ -24,6 +24,7 @@ import org.mediterraneancoin.proxy.net.WorkState;
 public class McproxyStratumServlet  extends HttpServlet {
     
     public static boolean DEBUG = false;
+    private static final String prefix = "SERVLET ";
     
     static int localport;
     static String hostname;
@@ -59,7 +60,7 @@ public class McproxyStratumServlet  extends HttpServlet {
   
 
         if (DEBUG) {  
-            System.out.println("method: " + request.getMethod());
+            System.out.println(prefix + "method: " + request.getMethod());
         }        
         
         String type = request.getContentType(); 
@@ -70,7 +71,7 @@ public class McproxyStratumServlet  extends HttpServlet {
         
         if (DEBUG) {
             //System.out.println("auth: " + authHeader);
-            System.out.println("content-type: " + type );
+            //System.out.println("content-type: " + type );
         }
         
         
@@ -82,8 +83,8 @@ public class McproxyStratumServlet  extends HttpServlet {
  
 
         if (DEBUG) {  
-          System.out.println("content-len: " + contentLength);          
-          System.out.println("content: " + content);          
+          //System.out.println("content-len: " + contentLength);          
+          //System.out.println("content: " + content);          
         }        
         
 
@@ -101,7 +102,7 @@ public class McproxyStratumServlet  extends HttpServlet {
         String jsonMethod = node.get("method").asText();
 
         if (DEBUG) {
-          System.out.println("jsonMethod: " + jsonMethod);
+          //System.out.println("jsonMethod: " + jsonMethod);
         }
 
         int paramSize = -1;
@@ -117,7 +118,7 @@ public class McproxyStratumServlet  extends HttpServlet {
           
         if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize == 0) {
             
-            System.out.println("getwork request from miner...");
+            System.out.println(prefix + "getwork request from miner...");
 
             // data has already been byteswapped
             McproxyHandler.SessionStorage sessionStorage = StratumThread.getSessionStorage();
@@ -130,7 +131,7 @@ public class McproxyStratumServlet  extends HttpServlet {
 
         } else if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize != 0) {
 
-            System.out.println("submitwork request from miner... works queue size: " + works.size());
+            System.out.println(prefix + "submitwork request from miner... works queue size: " + works.size());
 
             String receivedDataStr = node.get("params").get(0).asText();
             
@@ -140,7 +141,7 @@ public class McproxyStratumServlet  extends HttpServlet {
             
 
             if (sessionStorage == null) {
-                System.out.println("WORK NOT FOUND!!! " + receivedDataStr);
+                System.out.println(prefix + "WORK NOT FOUND!!! " + receivedDataStr);
 
                 answer = "{\"result\":false,\"error\":null,\"id\":1}";
 
@@ -152,9 +153,9 @@ public class McproxyStratumServlet  extends HttpServlet {
                 WorkState work = sessionStorage.work;
 
                 if (DEBUG) { 
-                    System.out.println("RECEIVED WORK: " + receivedDataStr);
-                    System.out.println("dataFromWallet: " + sessionStorage.dataFromWallet);
-                    System.out.println("sentData TO MINER: " + sessionStorage.sentData);
+                    System.out.println(prefix + "RECEIVED WORK: " + receivedDataStr);
+                    System.out.println(prefix + "dataFromWallet: " + sessionStorage.dataFromWallet);
+                    System.out.println(prefix + "sentData TO MINER: " + sessionStorage.sentData);
                 }
                 
                 // second part verification (STAGE2)
@@ -164,9 +165,9 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 String nonceStr = receivedDataStr.substring(76*2, 76*2 + 8);        
                 
-                if (DEBUG)
-                    System.out.println("byteswapped nonce: " + nonceStr);
-
+                if (DEBUG) {
+                    System.out.println(prefix + "byteswapped nonce: " + nonceStr);
+                }
 
                 // copy nonce from received work (and also nTime and nBits) to original work, a total of 12 bytes
                 byte [] data = work.getData1();
@@ -201,18 +202,21 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 //System.out.println("hashTarget: " + hashTarget);
                 if (DEBUG)
-                    System.out.println("hashTarget: " + hashTarget.toString(16));                
+                    System.out.println(prefix + "hashTarget: " + hashTarget.toString(16));                
 
                 BigInteger hash = new BigInteger( 1 , SuperHasher.swap(finalHash) );
 
                 boolean checkHash =  hash.compareTo(hashTarget) <= 0;
 
                 if (DEBUG)
-                    System.out.println("hash: " + hash.toString(16));  
+                    System.out.println(prefix + "hash: " + hash.toString(16));  
 
-                System.out.println("is hash ok? " + checkHash);                
+                System.out.println(prefix + "is hash ok? " + checkHash);                
                 
                 if (!checkHash ) {
+                    
+                    System.out.println(prefix + "returning FALSE to submit request");
+                    
                     answer = "{\"result\":false,\"error\":null,\"id\":1}";
                 } else {
                     
@@ -222,7 +226,9 @@ public class McproxyStratumServlet  extends HttpServlet {
                     // CHECK: need to byteswap?
                     boolean poolSubmitResult = stratumConnection.sendWorkSubmission(sessionStorage.serverWork);
   
-                     
+                    if (DEBUG) {
+                        System.out.println(prefix + "returning TRUE to submit request");  
+                    }
                     
                     answer = "{\"result\":" + poolSubmitResult + ",\"error\":null,\"id\":1}";
                 }

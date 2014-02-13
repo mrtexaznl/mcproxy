@@ -65,6 +65,8 @@ public class StratumConnection
     private LinkedBlockingDeque<ServerWork> workQueue = new LinkedBlockingDeque<ServerWork>();
     
     private LinkedBlockingDeque<StratumResult> stratumResults = new LinkedBlockingDeque<StratumResult>();
+    public static boolean DEBUG = true;
+    private static final String prefix = "STRATUM-CONNECTION ";
     
     public static class StratumResult {
         long id;
@@ -93,6 +95,12 @@ public class StratumConnection
             }
             return true;
         }
+
+        @Override
+        public String toString() {
+            return "StratumResult{" + "id=" + id + ", result=" + result + ", error=" + error + '}';
+        }
+
         
         
     }
@@ -167,7 +175,7 @@ public class StratumConnection
         sendMessage(resultNode);        
     }
     
-    public void sendWorkerAuthorization(String username, String password) {
+    public boolean sendWorkerAuthorization(String username, String password) {
         
         ObjectNode resultNode = mapper.createObjectNode();
         // {"params": ["slush.miner1", "password"], "id": 2, "method": "mining.authorize"}\n
@@ -176,13 +184,25 @@ public class StratumConnection
         putArray.add(username);
         putArray.add(password);
         
-        resultNode.put("id", nextRequestId.incrementAndGet() );
+        long requestId = nextRequestId.incrementAndGet();
+        resultNode.put("id", requestId );
         
         resultNode.put("method", "mining.authorize");  
         
         System.out.println(resultNode.asText());
         
-        sendMessage(resultNode);            
+        sendMessage(resultNode);           
+        
+        StratumResult res;
+        
+        while ((res = findStratumResult(requestId)) == null) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ex) {
+            }            
+        }
+        
+        return res.result;
         
     }
     
@@ -267,7 +287,7 @@ public class StratumConnection
             StratumResult res = i.next();
             
             if (res.id == requestId) {
-                System.out.println("findStratumResult: " + res);
+                System.out.println("findStratumResult: " + res.toString());
                 stratumResults.remove(res);
                 
                 return res;
@@ -406,11 +426,20 @@ public class StratumConnection
     
     public ServerWork getWork() throws NoSuchAlgorithmException, CloneNotSupportedException {
         
+        if (DEBUG) {
+            System.out.println(prefix + "getWork, workQueue size: " + workQueue.size());
+        }
+        
         // Pick the latest job from pool
         ServerWork originalWork = workQueue.peek();
         
-        if (originalWork == null)
+        if (originalWork == null) {
+            if (DEBUG) {
+                System.out.println(prefix + "getWork, returning null!");
+            }
+            
             return null;
+        }
         
         ServerWork work = (ServerWork) originalWork.clone();
         
@@ -491,6 +520,10 @@ public class StratumConnection
         //self.register_merkle(job, merkle_root, extranonce2)    
         
         setDifficulty(work, difficulty);
+        
+        if (DEBUG) {
+            System.out.println(prefix + "getWork, returning: " + work);
+        }        
         
         return work;
     }
@@ -870,7 +903,7 @@ False]
     
     private void processInMessage(ObjectNode msg) {
         
-        System.out.println("processInMessage " + msg.toString());
+        //System.out.println(prefix + "processInMessage " + msg.toString());
         // https://www.btcguild.com/new_protocol.php
         
         long idx = msg.get("id").asLong();
@@ -883,7 +916,7 @@ False]
         String msgStr = msg.toString();
         
         if (msgStr.contains("\"mining.notify\"") && msgStr.contains("result")) {
-            System.out.println("MESSAGE mining.notify (work subscription confirmation)");
+            System.out.println(prefix + "MESSAGE mining.notify (work subscription confirmation)");
             
             // {"error":null,"id":6268754711428788574,"result":[["mining.notify","ae6812eb4cd7735a302a8a9dd95cf71f"],"f8000008",4]}
             
@@ -911,14 +944,14 @@ False]
             
             miningSubscribed = true;
             
-            System.out.println("notifySubscription = " + notifySubscription);
-            System.out.println("extraNonce1Str = " + extraNonce1Str);
-            System.out.println("extranonce2_size = " + extranonce2_size);
+            System.out.println(prefix + "notifySubscription = " + notifySubscription);
+            System.out.println(prefix + "extraNonce1Str = " + extraNonce1Str);
+            System.out.println(prefix + "extranonce2_size = " + extranonce2_size);
             System.out.println();
             
             return;
         } else if (msgStr.contains("\"mining.set_difficulty\"")) {
-            System.out.println("MESSAGE mining.set_difficulty");
+            System.out.println(prefix + "MESSAGE mining.set_difficulty");
             // {"params":[256],"id":null,"method":"mining.set_difficulty"}
             
             ArrayNode paramsNode = (ArrayNode) msg.get("params");
@@ -927,11 +960,11 @@ False]
             
             difficulty = newDifficulty;
             
-            System.out.println("new difficulty: " + newDifficulty);
+            System.out.println(prefix + "new difficulty: " + newDifficulty);
             System.out.println();
             return;
         } else if (msgStr.contains("\"mining.notify\"") && msgStr.contains("params")) {
-            System.out.println("MESSAGE mining.notify (work push)");
+            System.out.println(prefix + "MESSAGE mining.notify (work push)");
             
             ArrayNode params = (ArrayNode) msg.get("params");
             
@@ -972,11 +1005,13 @@ False]
             newServerWork.ntime_delta = Long.parseLong(newServerWork.nTime, 16) - unixTime;
             
             if (newServerWork.cleanJobs) {
-                System.out.println("cleanJobs == true! cleaning work queue");
+                System.out.println(prefix + " cleanJobs == true! cleaning work queue");
                 workQueue.clear();
             }
             
             workQueue.add(newServerWork);
+            
+            System.out.println(prefix + " workQueue size: " + workQueue.size() );
             
 /*            
 params[0] = Job ID. This is included when miners submit a results so work can be matched with proper transactions.
@@ -995,10 +1030,10 @@ params[8] = Clean Jobs. If true, miners should abort their current work and imme
             System.out.println();
             return;            
         } else if (msgStr.contains("\"error\"") && msgStr.contains("\"result\"")) {
-            System.out.println("MESSAGE result");
+            System.out.println(prefix + "MESSAGE result");
             
             lastOperationResult = msg.get("result").asBoolean();
-            System.out.println("result = " + lastOperationResult);
+            System.out.println(prefix + "result = " + lastOperationResult);
             
             StratumResult result = new StratumResult();
             result.id = msg.get("id").asLong();
@@ -1007,7 +1042,7 @@ params[8] = Clean Jobs. If true, miners should abort their current work and imme
             
             stratumResults.add(result);
             
-            System.out.println("stratumResults size: " + stratumResults.size());
+            System.out.println(prefix + "stratumResults size: " + stratumResults.size());
             
             System.out.println();
         }

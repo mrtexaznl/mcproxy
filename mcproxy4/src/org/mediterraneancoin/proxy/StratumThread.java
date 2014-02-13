@@ -20,7 +20,8 @@ import org.mediterraneancoin.proxy.net.WorkState;
 public class StratumThread implements Runnable {
     
     private static long minDeltaTime = 200; // ms
-    private static int minQueueLength = 4;    
+    private static int minQueueLength = 4;   
+    private static int maxQueueLength = 8;
     
     //static String workerName;
     //private static String workerPassword;
@@ -84,11 +85,17 @@ public class StratumThread implements Runnable {
             Logger.getLogger(StratumThread.class.getName()).log(Level.SEVERE, null, ex);
         }        
         
-        if (storage.serverWork == null || storage.serverWork.block_header == null) {
-            System.out.println("thread " + threadId + " returning null!");
+        if (storage.serverWork == null || storage.serverWork.block_header == null ) {
+            System.out.println("thread " + threadId + " getting null! Waiting for a while...");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException ex) {
+            }
+            return;
         }
         
         storage.work = new WorkState(null);
+  
 
         storage.work.parseData( WorkState.byteSwap( storage.serverWork.block_header ) );
         storage.work.setTarget(storage.serverWork.target_hex);     
@@ -166,7 +173,7 @@ public class StratumThread implements Runnable {
     
     public void cleanup() {
         
-        while (queue.size() > minQueueLength * 4) {
+        while (queue.size() > maxQueueLength) {
             if (DEBUG)
                 System.out.println("queue.size(): " + queue.size());
             
@@ -248,7 +255,7 @@ public class StratumThread implements Runnable {
                 if (DEBUG)
                     System.out.println("to " + localMinDeltaTime + " ms");
                 
-            } else if (queue.size() > (int)((minQueueLength * 3.) / 2.)) {
+            } else if (queue.size() > /*(int)((minQueueLength * 3.) / 2.)*/ maxQueueLength) {
                 
                 if (DEBUG)
                     System.out.print(threadId + "+++increasing localMinDeltaTime from " + localMinDeltaTime + " ");
@@ -311,7 +318,19 @@ public class StratumThread implements Runnable {
 
     public static void setMinQueueLength(int minQueueLength) {
         StratumThread.minQueueLength = minQueueLength;
+        
+        if (maxQueueLength <= StratumThread.minQueueLength)
+            maxQueueLength = StratumThread.minQueueLength+1;
+    }
+
+    public static int getMaxQueueLength() {
+        return maxQueueLength;
+    }
+
+    public static void setMaxQueueLength(int maxQueueLength) {
+        StratumThread.maxQueueLength = maxQueueLength;
     }
  
+    
     
 }

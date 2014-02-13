@@ -40,7 +40,7 @@ public class HttpServer {
         
         long minDeltaTime = 50;         
         
-        int minQueueLength = 4;
+        int minQueueLength = 2;
 
          while (i < args.length) {
 
@@ -75,7 +75,7 @@ public class HttpServer {
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" + 
                            "-t: min delta time (default: 50 ms)\n" + 
-                           "-m: mininum queue length (default: 4)\n" + 
+                           "-m: mininum queue length (default: 2)\n" + 
                            "-u: worker username\n" +
                            "-P: worker password\n" +
                            "-v: verbose"
@@ -189,7 +189,7 @@ public class HttpServer {
             
             StratumThread.setMinDeltaTime(minDeltaTime);
 
-            StratumThread.setMinQueueLength(4);
+            StratumThread.setMinQueueLength(minQueueLength);
 
             for (int h = 0; h < stratumThreads.length; h++) {
                 stratumThreads[h] = new StratumThread();
