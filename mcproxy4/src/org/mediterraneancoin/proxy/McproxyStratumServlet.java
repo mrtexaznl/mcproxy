@@ -123,6 +123,7 @@ public class McproxyStratumServlet  extends HttpServlet {
             // data has already been byteswapped
             McproxyHandler.SessionStorage sessionStorage = StratumThread.getSessionStorage();
 
+            System.out.println(prefix + "sending getwork: " + sessionStorage.answer);
             // 
             works.put(sessionStorage.sentData.substring(0, 68*2) , sessionStorage);
 
