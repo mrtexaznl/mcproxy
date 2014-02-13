@@ -241,6 +241,22 @@ public class StratumThread implements Runnable {
             //
             if (queue.size() <= 1) {
                 localMinDeltaTime = 10;
+            } else if (queue.size() < maxQueueLength && queue.size() >= minQueueLength) { 
+                if (DEBUG)    
+                    System.out.print(threadId + "***+decreasing localMinDeltaTime from " + localMinDeltaTime + " ");
+                
+                localMinDeltaTime = (localMinDeltaTime * 85) / 100;            
+                
+
+                if (localMinDeltaTime < 10) {
+                    localMinDeltaTime = 10;
+                    continue;
+                }                
+                
+                if (DEBUG)
+                    System.out.println("to " + localMinDeltaTime + " ms");                
+                
+                
             } else if (queue.size() < minQueueLength) {
                 
                 if (DEBUG)    
