@@ -96,9 +96,12 @@ public class StratumThread implements Runnable {
         }
         
         storage.work = new WorkState(null);
-  
 
-        storage.work.parseData( WorkState.byteSwap( storage.serverWork.block_header ) );
+        // storage.serverWork.block_header has to be byteswapped before going through stage1!!
+        // 00000002ff9fc69577e6881d52ee081d9134f77934435ca6a9fe987548809bd5a8bb5750FFCB5BF7E595E88EFF7390CAEBF12673DF24A2AD81C9EEAA518B5F864E4698AB52FCA55D1b01a8bf00000000000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000
+
+        // parseData does a byteswap of the args!!!
+        storage.work.parseData( /*WorkState.byteSwap*/( storage.serverWork.block_header ) );
         storage.work.setTarget(storage.serverWork.target_hex);     
         
 
@@ -108,7 +111,9 @@ public class StratumThread implements Runnable {
 
         if (DEBUG) {  
             // data has already been byteswapped
-            System.out.println(prefix + "data: " + dataFromWallet);              
+            System.out.println(prefix + "data: " + dataFromWallet);       
+            //System.out.println(prefix + "storage.serverWork.block_header: " + storage.serverWork.block_header);
+            //System.out.println(prefix + "byte swap                      : " + WorkState.byteSwap(storage.serverWork.block_header));
             System.out.println(prefix + "target: " + storage.work.getTarget());
         }
         
@@ -129,7 +134,7 @@ public class StratumThread implements Runnable {
 
         if (DEBUG) { 
             System.out.println(prefix + "part1: " + tohex(part1));
-            System.out.println();                
+            //System.out.println();                
         }
 
         ObjectNode resultNode = mapper.createObjectNode();
@@ -138,6 +143,11 @@ public class StratumThread implements Runnable {
         String tempData = tohex(part1) + tohex(storage.work.getData2());
 
         String dataStr = WorkState.byteSwap( tempData );
+        
+        if (DEBUG) { 
+            System.out.println(prefix + "data for miner: " + dataStr);
+            //System.out.println();                
+        }        
 
         resultNode.put("data", dataStr );
         resultNode.put("target", storage.work.getTarget());                
@@ -160,7 +170,7 @@ public class StratumThread implements Runnable {
 
 
         if (DEBUG) { 
-            System.out.println("json: " + storage.answer);
+            System.out.println(prefix + "json: " + storage.answer);
             System.out.println();
             System.out.println();
         }        
