@@ -220,11 +220,9 @@ public class McproxyStratumServlet  extends HttpServlet {
                     
                     // submit work to Stratum
                     // CHECK: need to byteswap?
-                    stratumConnection.submitStratumWork(sessionStorage.serverWork);
-                    
-                    // TODO: wait for pool response and forward it to the miner
-                    
-                    boolean poolSubmitResult = true;
+                    boolean poolSubmitResult = stratumConnection.sendWorkSubmission(sessionStorage.serverWork);
+  
+                     
                     
                     answer = "{\"result\":" + poolSubmitResult + ",\"error\":null,\"id\":1}";
                 }

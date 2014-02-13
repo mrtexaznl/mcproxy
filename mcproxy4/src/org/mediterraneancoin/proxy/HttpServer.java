@@ -177,6 +177,7 @@ public class HttpServer {
             
             instance.open(hostname, port);
             
+            
             instance.sendWorkerAuthorization(workerName, workerPassword);
              
             instance.sendMiningSubscribe();

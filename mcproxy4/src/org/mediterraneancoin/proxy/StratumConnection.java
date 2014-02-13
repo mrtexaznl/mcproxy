@@ -13,7 +13,10 @@ import java.util.Scanner;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import java.security.SecureRandom;
+import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.node.ArrayNode;
  
@@ -60,6 +63,39 @@ public class StratumConnection
     long difficulty;
     
     private LinkedBlockingDeque<ServerWork> workQueue = new LinkedBlockingDeque<ServerWork>();
+    
+    private LinkedBlockingDeque<StratumResult> stratumResults = new LinkedBlockingDeque<StratumResult>();
+    
+    public static class StratumResult {
+        long id;
+        boolean result;
+        
+        String error;
+
+        @Override
+        public int hashCode() {
+            int hash = 7;
+            hash = 67 * hash + (int) (this.id ^ (this.id >>> 32));
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final StratumResult other = (StratumResult) obj;
+            if (this.id != other.id) {
+                return false;
+            }
+            return true;
+        }
+        
+        
+    }
     
     public static void main(String [] arg) throws IOException, InterruptedException, NoSuchAlgorithmException, CloneNotSupportedException {
         
@@ -154,7 +190,7 @@ public class StratumConnection
      * the worker which submits this work, must update the nTime and nonce fields
      * @param work 
      */    
-    public void sendWorkSubmission(ServerWork work) {
+    public boolean sendWorkSubmission(ServerWork work) {
         
         // 1. Check if blockheader meets requested difficulty
         // NOTE: this is done previously
@@ -194,14 +230,52 @@ public class StratumConnection
         putArray.add(work.nTime);
         putArray.add(work.nonce);
         
-        resultNode.put("id", nextRequestId.incrementAndGet() );
+        long requestId = nextRequestId.incrementAndGet();
+        resultNode.put("id", requestId );
         
         resultNode.put("method", "mining.submit");
         
         //System.out.println(resultNode.asText());
         
-        sendMessage(resultNode);          
+        sendMessage(resultNode); 
         
+        
+        StratumResult res;
+        
+        while ((res = findStratumResult(requestId)) == null) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ex) {
+            }            
+        }
+        
+        return res.result;
+        /*
+        while (resultNode.has("sendresult")) {
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException ex) {
+            }
+        }
+        */
+        
+    }
+    
+    private StratumResult findStratumResult(long requestId) {
+        
+        for (Iterator<StratumResult> i = stratumResults.iterator(); i.hasNext();) {
+            StratumResult res = i.next();
+            
+            if (res.id == requestId) {
+                System.out.println("findStratumResult: " + res);
+                stratumResults.remove(res);
+                
+                return res;
+            }            
+            
+        }
+        
+        return null;
     }
     
     final private Object lock = new Object();
@@ -323,7 +397,7 @@ public class StratumConnection
      * the worker which submits this work, must update the nTime and nonce fields
      * @param work 
      */
-    public void submitStratumWork(ServerWork work) {
+    private void submitStratumWork(ServerWork work) {
         
         
 
@@ -921,11 +995,19 @@ params[8] = Clean Jobs. If true, miners should abort their current work and imme
             System.out.println();
             return;            
         } else if (msgStr.contains("\"error\"") && msgStr.contains("\"result\"")) {
-            System.out.println("MESSAGE reply");
+            System.out.println("MESSAGE result");
             
             lastOperationResult = msg.get("result").asBoolean();
             System.out.println("result = " + lastOperationResult);
             
+            StratumResult result = new StratumResult();
+            result.id = msg.get("id").asLong();
+            result.error = msg.get("error").asText();
+            result.result = msg.get("result").asBoolean();
+            
+            stratumResults.add(result);
+            
+            System.out.println("stratumResults size: " + stratumResults.size());
             
             System.out.println();
         }
@@ -946,6 +1028,12 @@ processInMessage
         
         
     }
+
+    public LinkedBlockingDeque<StratumResult> getStratumResults() {
+        return stratumResults;
+    }
+    
+    
     
     
 
