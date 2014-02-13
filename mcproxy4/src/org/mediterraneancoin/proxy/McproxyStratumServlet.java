@@ -169,6 +169,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                 
                 if (DEBUG) {
                     System.out.println(prefix + "byteswapped nonce: " + nonceStr);
+                     
                 }
 
                 // copy nonce from received work (and also nTime and nBits) to original work, a total of 12 bytes
@@ -200,7 +201,7 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 // 2.1 - verify hash
                 byte [] header = work.getData1();
-                BigInteger hashTarget = SuperHasher.readCompact(header[75], header[74], header[73],header[72]);
+                BigInteger hashTarget = SuperHasher.readCompact(header[72], header[73], header[74], header[75]);
 
                 //System.out.println("hashTarget: " + hashTarget);
                 if (DEBUG)
@@ -216,6 +217,14 @@ public class McproxyStratumServlet  extends HttpServlet {
                 System.out.println(prefix + "is hash ok? " + checkHash);                
                 
                 if (!checkHash ) {
+                    
+                    // safety check
+                    
+                    
+                    
+                    
+                    // 
+                    
                     
                     System.out.println(prefix + "returning FALSE to submit request");
                     
@@ -280,5 +289,26 @@ public class McproxyStratumServlet  extends HttpServlet {
         
     }
     
+    
+    public static void main(String [] arg) {
+        
+                byte [] header = { 0x1b,
+                    0x01,
+                    (byte)0x9d,
+                    (byte)0x93 };
+                
+                BigInteger hashTarget = SuperHasher.readCompact(header[3], header[2], header[1],header[0]);
+
+                //System.out.println("hashTarget: " + hashTarget);
+   
+                    System.out.println(prefix + "hashTarget: " + hashTarget.toString(16));                
+
+                //BigInteger hash = new BigInteger( 1 , SuperHasher.swap(finalHash) );
+
+                //boolean checkHash =  hash.compareTo(hashTarget) <= 0;
+        
+        
+        
+    }
     
 }
