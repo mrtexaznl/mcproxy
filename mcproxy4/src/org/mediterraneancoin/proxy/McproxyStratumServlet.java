@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -23,7 +24,7 @@ import org.mediterraneancoin.proxy.net.WorkState;
  */
 public class McproxyStratumServlet  extends HttpServlet {
     
-    public static boolean DEBUG = false;
+    public static boolean DEBUG = true;
     private static final String prefix = "SERVLET ";
     
     static int localport;
@@ -237,6 +238,23 @@ public class McproxyStratumServlet  extends HttpServlet {
                 //String workStr = WorkState.byteSwap(sessionStorage.dataFromWallet.substring(0, 68*2)) +
                 //        receivedDataStr.substring(68*2);
                  
+                try {
+                    for (Iterator<String> i = works.keySet().iterator(); i.hasNext();) {
+                        String key = i.next();
+
+                        McproxyHandler.SessionStorage ss = works.get(key);
+
+                        long delta = (System.currentTimeMillis() - ss.timestamp) / 1000;
+
+                        if (delta > 120)
+                            works.remove(ss);
+
+                    }
+                } catch (Exception ex) {
+                    System.out.println("Error: " + ex.toString());
+                }
+                
+                
 
                 
               }

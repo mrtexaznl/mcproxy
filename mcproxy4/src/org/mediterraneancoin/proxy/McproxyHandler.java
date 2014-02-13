@@ -49,6 +49,38 @@ public class McproxyHandler extends AbstractHandler {
         String answer;
         
         ServerWork serverWork;
+
+        @Override
+        public int hashCode() {
+            int hash = 3;
+            hash = 97 * hash + (this.sentData != null ? this.sentData.hashCode() : 0);
+            hash = 97 * hash + (this.dataFromWallet != null ? this.dataFromWallet.hashCode() : 0);
+            hash = 97 * hash + (int) (this.timestamp ^ (this.timestamp >>> 32));
+            return hash;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == null) {
+                return false;
+            }
+            if (getClass() != obj.getClass()) {
+                return false;
+            }
+            final SessionStorage other = (SessionStorage) obj;
+            if ((this.sentData == null) ? (other.sentData != null) : !this.sentData.equals(other.sentData)) {
+                return false;
+            }
+            if ((this.dataFromWallet == null) ? (other.dataFromWallet != null) : !this.dataFromWallet.equals(other.dataFromWallet)) {
+                return false;
+            }
+            if (this.timestamp != other.timestamp) {
+                return false;
+            }
+            return true;
+        }
+        
+        
     }       
 
     @Override
