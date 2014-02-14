@@ -206,10 +206,10 @@ public class McproxyStratumServlet  extends HttpServlet {
                 //
                 byte a,  b,  c,  d;
 
-                a = header[72];
-                b = header[73];
-                c = header[74];
-                d = header[75];
+                a = header[75];
+                b = header[74];
+                c = header[73];
+                d = header[72];
 
 
                 int nSize;
@@ -319,12 +319,19 @@ public class McproxyStratumServlet  extends HttpServlet {
     
     public static void main(String [] arg) {
         
+        // 52fdf7a6 1b01c274
+        
                 byte [] header = { 0x1b,
                     0x01,
                     (byte)0x9d,
                     (byte)0x93 };
                 
-                BigInteger hashTarget = SuperHasher.readCompact(header[3], header[2], header[1],header[0]);
+                header = new byte [] { 0x1b,
+                    0x01,
+                    (byte)0xc2,
+                    (byte)74 };
+                
+                BigInteger hashTarget = SuperHasher.readCompact(header[0], header[1], header[2],header[3]);
 
                 //System.out.println("hashTarget: " + hashTarget);
    
