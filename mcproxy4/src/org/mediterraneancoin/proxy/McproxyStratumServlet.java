@@ -185,10 +185,10 @@ public class McproxyStratumServlet  extends HttpServlet {
                 // 2 - calculate part2 of hybridhash               
 
                 byte [] targetBits = new byte[4];
-                targetBits[0] = work.getData1()[75];
+                targetBits[0] = work.getData1()[75];  // LSB
                 targetBits[1] = work.getData1()[74];
                 targetBits[2] = work.getData1()[73];
-                targetBits[3] = work.getData1()[72];    
+                targetBits[3] = work.getData1()[72];  // MSB  
 
                 byte[] finalHash = null;
                 try {
@@ -206,10 +206,10 @@ public class McproxyStratumServlet  extends HttpServlet {
                 //
                 byte a,  b,  c,  d;
 
-                a = targetBits[3]; //header[75];
-                b = targetBits[2]; // header[74];
-                c = targetBits[1]; //header[73];
-                d = targetBits[0]; //header[72];
+                a = targetBits[3]; //header[72];  // MSB  
+                b = targetBits[2]; // header[73];
+                c = targetBits[1]; //header[74];
+                d = targetBits[0]; //header[75]; 
 
 
                 int nSize;
@@ -321,6 +321,8 @@ public class McproxyStratumServlet  extends HttpServlet {
         
         // 52fdf7a6 1b01c274
         
+        //1b01c274
+        
                 byte [] header = { 0x1b,
                     0x01,
                     (byte)0x9d,
@@ -330,6 +332,8 @@ public class McproxyStratumServlet  extends HttpServlet {
                     0x01,
                     (byte)0xc2,
                     (byte)74 };
+                
+                SuperHasher.DEBUG = true;
                 
                 BigInteger hashTarget = SuperHasher.readCompact(header[0], header[1], header[2],header[3]);
 
@@ -341,7 +345,9 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 //boolean checkHash =  hash.compareTo(hashTarget) <= 0;
         
-        
+                    BigInteger p = new BigInteger("421242738922051710830569942886312364625170292790221313845902704640");
+                    
+                    System.out.println(prefix + "POOL target: " + p.toString(16));     
         
     }
     
