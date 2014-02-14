@@ -265,13 +265,21 @@ public class StratumConnection
         sendMessage(resultNode); 
         
         
-        StratumResult res;
+        StratumResult res = null;
         
-        while ((res = findStratumResult(requestId)) == null) {
+        long delta = 0;
+        
+        while ( delta < 10000 && (res = findStratumResult(requestId)) == null) {
             try {
                 Thread.sleep(10);
+                delta += 10;
             } catch (InterruptedException ex) {
             }            
+        }
+        
+        if (res == null) {
+            System.out.println(prefix + " sendWorkSubmission error: no response from pool");
+            return false;
         }
         
         return res.result;

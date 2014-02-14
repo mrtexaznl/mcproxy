@@ -255,7 +255,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                 } else {
                     
                     // TODO: modify sessionStorage.serverWork with correct nonce
-                    sessionStorage.serverWork.nonce =  nonceStr;
+                    sessionStorage.serverWork.nonce =  nonceStr; //WorkState.byteSwap(nonceStr); // nonceStr;
                     
                     // submit work to Stratum
                     // CHECK: need to byteswap?
