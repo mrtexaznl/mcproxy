@@ -174,21 +174,22 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 // copy nonce from received work (and also nTime and nBits) to original work, a total of 12 bytes
                 byte [] data = work.getData1();
-
+                
+                /*
                 for (int i = 0; i < 24; i += 2) {                   
                       String n = receivedDataStr.substring(i, i + 2);
 
                       data[68 + i / 2] =  (byte) (0xFF & Integer.parseInt(n, 16)); //Byte.parseByte(n, 16);                          
                 }
-
+                */
 
                 // 2 - calculate part2 of hybridhash               
 
                 byte [] targetBits = new byte[4];
-                targetBits[0] = work.getData1()[75];  // LSB
-                targetBits[1] = work.getData1()[74];
-                targetBits[2] = work.getData1()[73];
-                targetBits[3] = work.getData1()[72];  // MSB  
+                targetBits[0] = work.getData1()[72];  // LSB
+                targetBits[1] = work.getData1()[73];
+                targetBits[2] = work.getData1()[74];
+                targetBits[3] = work.getData1()[75];  // MSB  
 
                 byte[] finalHash = null;
                 try {
@@ -319,7 +320,115 @@ public class McproxyStratumServlet  extends HttpServlet {
     }
     
     
-    public static void main(String [] arg) {
+    public static void main(String [] arg) throws GeneralSecurityException {
+        
+        if (true) {
+            
+            String START = "eecb92d5eefa3c91daed8b7a1ebc3093c15b4b459c05e54d92e78bf535d6c234a3e00426a7648f4ac8214fae1d9262427d2d7e6609f5323b4fd1f887a4aba6cf25eee7bf52fe29b01b01f9321dc38608" +
+                    "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
+
+
+            WorkState work = new WorkState(null);
+
+            work.parseData(START);            
+
+            System.out.println(work.getAllDataHex());
+
+            SuperHasher hasher = new SuperHasher();
+            
+            String receivedDataStr = work.getAllDataHex();
+            
+                //receivedDataStr = WorkState.byteSwap(receivedDataStr);
+                
+                System.out.println(receivedDataStr);
+
+                String nonceStr = receivedDataStr.substring(76*2, 76*2 + 8);        
+                
+                if (DEBUG) {
+                    System.out.println(prefix + "byteswapped nonce: " + nonceStr);
+                     
+                }
+
+                // copy nonce from received work (and also nTime and nBits) to original work, a total of 12 bytes
+                byte [] data = work.getData1();
+
+                
+                for (int i = 0; i < 24; i += 2) {                   
+                      String n = receivedDataStr.substring(68*2 + i, 68*2 + i + 2);
+
+                      byte nv = (byte) (0xFF & Integer.parseInt(n, 16));
+                      
+                      if (nv != data[68 + i / 2]) {
+                          System.out.println("*** " + (8 + i / 2));
+                          
+                          data[68 + i / 2] = nv;
+                      }
+                      
+                      
+                        //Byte.parseByte(n, 16);                          
+                }
+                
+
+                
+                // 2 - calculate part2 of hybridhash               
+
+                byte [] targetBits = new byte[4];
+                targetBits[0] = work.getData1()[72];  // LSB
+                targetBits[1] = work.getData1()[73];
+                targetBits[2] = work.getData1()[74];
+                targetBits[3] = work.getData1()[75];  // MSB  
+
+                byte[] finalHash = null;
+                try {
+                    finalHash = hasher.secondPartHash(data, targetBits);
+                } catch (NoSuchAlgorithmException ex) {
+                    Logger.getLogger(McproxyStratumServlet.class.getName()).log(Level.SEVERE, null, ex);
+                } catch (GeneralSecurityException ex) {
+                    Logger.getLogger(McproxyStratumServlet.class.getName()).log(Level.SEVERE, null, ex);
+                }            
+            
+                
+                work.setTarget("3fffc000000000000000000000000000000000000000000000000000000");
+
+                BigInteger hashTarget = new BigInteger( ( work.getTarget()) ,16);
+                
+                //
+
+                //System.out.println("hashTarget: " + hashTarget);
+                if (DEBUG)
+                    System.out.println(prefix + "hashTarget: " + hashTarget.toString(16));                
+
+                BigInteger hash = new BigInteger( 1 , SuperHasher.swap(finalHash) );
+
+                boolean checkHash =  hash.compareTo(hashTarget) <= 0;
+
+                if (DEBUG)
+                    System.out.println(prefix + "hash: " + hash.toString(16));  
+                System.out.println(prefix + "hash: " + hash.toString(10));
+
+                System.out.println(prefix + "is hash ok? " + checkHash);                     
+            
+            
+            
+            
+            
+            
+            
+            return;
+        }
+        
+        
+        
+        
+        
+        if (true) {
+            
+            BigInteger bi = new BigInteger("15363741008652289555944905765563173368446543359880944893284847603");
+            
+            System.out.println(bi.toString(16));
+            
+            return;
+        }
         
         // 52fdf7a6 1b01c274
         
