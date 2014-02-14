@@ -233,7 +233,11 @@ public class McproxyStratumServlet  extends HttpServlet {
                 
                 */
                 
-                BigInteger hashTarget = new BigInteger( WorkState.byteSwap( work.getTarget()) ,16);
+                String targetStr = WorkState.byteSwap( work.getTarget());
+                
+                System.out.println(prefix + "hashTarget STR: " + targetStr);
+                
+                BigInteger hashTarget = new BigInteger( targetStr ,16);
                 
                 //
 
