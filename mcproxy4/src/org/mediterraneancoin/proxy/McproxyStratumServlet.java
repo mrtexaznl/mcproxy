@@ -151,6 +151,13 @@ public class McproxyStratumServlet  extends HttpServlet {
                 
                 works.remove( receivedDataStr68 );
                 
+//            
+            //String START = "eecb92d5eefa3c91daed8b7a1ebc3093c15b4b459c05e54d92e78bf535d6c234a3e00426a7648f4ac8214fae1d9262427d2d7e6609f5323b4fd1f887a4aba6cf25eee7bf52fe29b01b01f9321dc38608" +
+            //        "000000800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
+            //receivedDataStr = START;
+            //receivedDataStr68 = receivedDataStr.substring(0, 68*2);
+//                
+                
 
                 WorkState work = sessionStorage.work;
 
@@ -163,7 +170,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                 // second part verification (STAGE2)
 
                 // 1 - byteswap all data received from miner
-                ///receivedDataStr = WorkState.byteSwap(receivedDataStr);
+                receivedDataStr = WorkState.byteSwap(receivedDataStr);
 
                 String nonceStr = receivedDataStr.substring(76*2, 76*2 + 8);        
                 
@@ -172,8 +179,17 @@ public class McproxyStratumServlet  extends HttpServlet {
                      
                 }
 
+                
+                
                 // copy nonce from received work (and also nTime and nBits) to original work, a total of 12 bytes
-                byte [] data = work.getData1();
+                //byte [] data = work.getData1();
+                
+                byte [] data = new byte[80];
+                for (int i = 0; i < 80; i++) {
+                    String n = receivedDataStr.substring(i*2, i*2 + 2);
+                    
+                    data[i] = (byte) (0xFF & Integer.parseInt(n, 16));
+                }
                 
                 /*
                 for (int i = 0; i < 24; i += 2) {                   
@@ -186,10 +202,10 @@ public class McproxyStratumServlet  extends HttpServlet {
                 // 2 - calculate part2 of hybridhash               
 
                 byte [] targetBits = new byte[4];
-                targetBits[0] = work.getData1()[72];  // LSB
-                targetBits[1] = work.getData1()[73];
-                targetBits[2] = work.getData1()[74];
-                targetBits[3] = work.getData1()[75];  // MSB  
+                targetBits[0] = data[72];  //work.getData1()[72];  // LSB
+                targetBits[1] = data[73];  //work.getData1()[73];
+                targetBits[2] = data[74];  //work.getData1()[74];
+                targetBits[3] = data[75];  //work.getData1()[75];  // MSB  
 
                 byte[] finalHash = null;
                 try {
