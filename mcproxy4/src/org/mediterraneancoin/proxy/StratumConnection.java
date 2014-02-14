@@ -39,6 +39,8 @@ public class StratumConnection
     private AtomicLong last_network_action;
     private volatile boolean open;
     private volatile boolean miningSubscribed;
+    
+    private String workerName, workerPassword;
  
    
     private byte[] extranonce1;
@@ -175,14 +177,17 @@ public class StratumConnection
         sendMessage(resultNode);        
     }
     
-    public boolean sendWorkerAuthorization(String username, String password) {
+    public boolean sendWorkerAuthorization(String workerName, String workerPassword) {
+        
+        this.workerName = workerName;
+        this.workerPassword = workerPassword;
         
         ObjectNode resultNode = mapper.createObjectNode();
         // {"params": ["slush.miner1", "password"], "id": 2, "method": "mining.authorize"}\n
         ArrayNode putArray = resultNode.putArray("params");
         
-        putArray.add(username);
-        putArray.add(password);
+        putArray.add(workerName);
+        putArray.add(workerPassword);
         
         long requestId = nextRequestId.incrementAndGet();
         resultNode.put("id", requestId );
@@ -981,6 +986,9 @@ False]
             // "id":null,"method":"mining.notify"}
             
             ServerWork newServerWork = new ServerWork();
+            newServerWork.workerName = this.workerName;
+            //newServerWork.workerPassword = this.workerPassword;
+            
             newServerWork.jobId = params.get(0).asText();
             newServerWork.hashPrevBlock = params.get(1).asText();
             newServerWork.coinbasePart1 = params.get(2).asText();

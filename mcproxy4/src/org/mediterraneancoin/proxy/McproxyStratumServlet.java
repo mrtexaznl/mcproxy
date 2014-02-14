@@ -269,7 +269,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                     boolean poolSubmitResult = stratumConnection.sendWorkSubmission(sessionStorage.serverWork);
   
                     if (DEBUG) {
-                        System.out.println(prefix + "returning TRUE to submit request");  
+                        System.out.println(prefix + "returning " + poolSubmitResult +" to submit request");  
                     }
                     
                     answer = "{\"result\":" + poolSubmitResult + ",\"error\":null,\"id\":1}";
@@ -286,8 +286,11 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                         long delta = (System.currentTimeMillis() - ss.timestamp) / 1000;
 
-                        if (delta > 120)
+                        if (delta > 120) {
+                            ss.serverWork = null;
+                            ss.work = null;
                             works.remove(ss);
+                        }
 
                     }
                 } catch (Exception ex) {
