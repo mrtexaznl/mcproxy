@@ -200,10 +200,10 @@ public class McproxyStratumServlet  extends HttpServlet {
                 }
 
                 // 2.1 - verify hash
-                byte [] header = work.getData1();
-                //BigInteger hashTarget = SuperHasher.readCompact(header[72], header[73], header[74], header[75]);
                 
-                //
+                /*
+                byte [] header = work.getData1();
+ 
                 byte a,  b,  c,  d;
 
                 a = targetBits[3]; //header[72];  // MSB  
@@ -230,7 +230,9 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 hashTarget = hashTarget.shiftLeft( 8 * (nSize -3));                    
                 
+                */
                 
+                BigInteger hashTarget = new BigInteger( WorkState.byteSwap( work.getTarget()) ,16);
                 
                 //
 
