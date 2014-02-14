@@ -206,10 +206,10 @@ public class McproxyStratumServlet  extends HttpServlet {
                 //
                 byte a,  b,  c,  d;
 
-                a = header[75];
-                b = header[74];
-                c = header[73];
-                d = header[72];
+                a = targetBits[3]; //header[75];
+                b = targetBits[2]; // header[74];
+                c = targetBits[1]; //header[73];
+                d = targetBits[0]; //header[72];
 
 
                 int nSize;
