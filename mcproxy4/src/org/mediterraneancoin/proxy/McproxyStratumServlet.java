@@ -248,21 +248,14 @@ public class McproxyStratumServlet  extends HttpServlet {
                 System.out.println(prefix + "is hash ok? " + checkHash);                
                 
                 if (!checkHash ) {
-                    
-                    // safety check
-                    
-                    
-                    
-                    
-                    // 
-                    
-                    
+                                        
                     System.out.println(prefix + "returning FALSE to submit request");
                     
                     answer = "{\"result\":false,\"error\":null,\"id\":1}";
                 } else {
                     
                     // TODO: modify sessionStorage.serverWork with correct nonce
+                    sessionStorage.serverWork.nonce =  nonceStr;
                     
                     // submit work to Stratum
                     // CHECK: need to byteswap?
