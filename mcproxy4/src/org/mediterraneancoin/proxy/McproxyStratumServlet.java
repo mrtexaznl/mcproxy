@@ -163,7 +163,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                 // second part verification (STAGE2)
 
                 // 1 - byteswap all data received from miner
-                receivedDataStr = WorkState.byteSwap(receivedDataStr);
+                ///receivedDataStr = WorkState.byteSwap(receivedDataStr);
 
                 String nonceStr = receivedDataStr.substring(76*2, 76*2 + 8);        
                 
@@ -233,7 +233,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                 
                 */
                 
-                String targetStr = WorkState.byteSwap( work.getTarget());
+                String targetStr = new StringBuilder(work.getTarget()).reverse().toString() ; // work.getTarget()
                 
                 System.out.println(prefix + "hashTarget STR: " + targetStr);
                 
