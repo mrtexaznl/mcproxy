@@ -270,7 +270,7 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 System.out.println(prefix + "is hash ok? " + checkHash);                
                 
-                if (!checkHash ) {
+                if (/*!checkHash*/ false ) {
                                         
                     System.out.println(prefix + "returning FALSE to submit request");
                     

@@ -40,7 +40,8 @@ public class HttpServer {
         
         long minDeltaTime = 50;         
         
-        int minQueueLength = 2;
+        int minQueueLength = 1;
+        int maxQueueLength = 2;
 
          while (i < args.length) {
 
@@ -59,6 +60,9 @@ public class HttpServer {
              } else if (args[i].equals("-m")) {
                  i++;
                  minQueueLength = Integer.parseInt(args[i]);
+             } else if (args[i].equals("-M")) {
+                 i++;
+                 maxQueueLength = Integer.parseInt(args[i]);
              } else if (args[i].equals("-t")) {
                  i++;
                  minDeltaTime = Long.parseLong(args[i]);
@@ -75,7 +79,8 @@ public class HttpServer {
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" + 
                            "-t: min delta time (default: 50 ms)\n" + 
-                           "-m: mininum queue length (default: 2)\n" + 
+                           "-m: mininum queue length (default: 1)\n" + 
+                           "-M: mininum queue length (default: 2)\n" + 
                            "-u: worker username\n" +
                            "-P: worker password\n" +
                            "-v: verbose"
@@ -183,13 +188,15 @@ public class HttpServer {
             instance.sendMiningSubscribe();
             
             //DEBUG
-            cores = 1;
+            cores = 2;
             
             StratumThread [] stratumThreads = new StratumThread[cores];        
             
             StratumThread.setMinDeltaTime(minDeltaTime);
 
             StratumThread.setMinQueueLength(minQueueLength);
+            
+            StratumThread.setMaxQueueLength(maxQueueLength);
 
             for (int h = 0; h < stratumThreads.length; h++) {
                 stratumThreads[h] = new StratumThread();
