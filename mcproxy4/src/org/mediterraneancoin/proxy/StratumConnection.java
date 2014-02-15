@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.io.PrintStream;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -243,7 +245,7 @@ public class StratumConnection
             
         // 5. Submit share to the pool
         //return self.f.rpc('mining.submit', [worker_name, job.job_id, extranonce2_hex, ntime, nonce])        
-                
+        // {"params": ["redacted", "1369818357 489", "12000000", "51a5c4f5", "41f20233"], "id": 2, "method": "mining.submit"}        
         
         ObjectNode resultNode = mapper.createObjectNode();
         
@@ -341,11 +343,16 @@ public class StratumConnection
         //res = Long.toHexString(work.extranonce2.get());
         
         if (work.extranonce2_size * 2 < res.length()) {
-            res = res.substring((int)(res.length() - work.extranonce2_size * 2));
+            //res = res.substring((int)(res.length() - work.extranonce2_size * 2));
+            
+            res = res.substring(0, (int)(res.length() - work.extranonce2_size * 2));
         } else if (work.extranonce2_size * 2 > res.length()) {
             while (work.extranonce2_size * 2 > res.length())
-                res = "00" + res;
+                //res = "00" + res;
+                res = res + "00";
         }
+        
+        System.out.println(prefix + " extranonce2_padding: " + res);
   
         return res;
         
@@ -437,6 +444,14 @@ public class StratumConnection
         
     }
     
+    public static long reverse(long x) {  
+        ByteBuffer bbuf = ByteBuffer.allocate(8);  
+        bbuf.order(ByteOrder.BIG_ENDIAN);  
+        bbuf.putLong(x);  
+        bbuf.order(ByteOrder.LITTLE_ENDIAN);  
+        return bbuf.getLong(0);
+    }      
+    
     public ServerWork getWork() throws NoSuchAlgorithmException, CloneNotSupportedException {
         
         if (DEBUG) {
@@ -457,7 +472,7 @@ public class StratumConnection
         ServerWork work = (ServerWork) originalWork.clone();
         
         // 1. Increase extranonce2
-        long extranonce2 = originalWork.extranonce2.incrementAndGet();
+        long extranonce2 = reverse(originalWork.extranonce2.incrementAndGet());
         work.extranonce2 = new AtomicLong(extranonce2);
         
         // 2. Build final extranonce
