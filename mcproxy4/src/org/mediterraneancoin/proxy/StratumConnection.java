@@ -254,7 +254,7 @@ public class StratumConnection
         putArray.add(work.workerName);
         putArray.add(work.jobId);
         putArray.add(extranonce2_hex);
-        putArray.add(work.nTime);
+        putArray.add(work.minerNtime);
         putArray.add(work.nonce);
         
         long requestId = nextRequestId.incrementAndGet();
@@ -262,7 +262,8 @@ public class StratumConnection
         
         resultNode.put("method", "mining.submit");
         
-        //System.out.println(resultNode.asText());
+        if (DEBUG)
+            System.out.println(prefix + " sendWorkSubmission: " + resultNode.asText());
         
         sendMessage(resultNode); 
         
@@ -280,7 +281,7 @@ public class StratumConnection
         }
         
         if (res == null) {
-            System.out.println(prefix + " sendWorkSubmission error: no response from pool");
+            System.out.println(prefix + " sendWorkSubmission error: no response from pool in 10s");
             return false;
         }
         
@@ -333,7 +334,7 @@ public class StratumConnection
         return result;
     }
     
-    String extranonce2_padding(ServerWork work) {
+    public static String extranonce2_padding(ServerWork work) {
         // Update coinbase. Always use an LE encoded nonce2 to fill in values from left to right and prevent overflow errors with small n2sizes
         
         String res;
@@ -352,7 +353,8 @@ public class StratumConnection
                 res = res + "00";
         }
         
-        System.out.println(prefix + " extranonce2_padding: " + res);
+        if (DEBUG)
+            System.out.println(prefix + " extranonce2_padding: " + res + ", len=" + res.length());
   
         return res;
         
@@ -370,7 +372,7 @@ public class StratumConnection
  */        
     }
     
-    public byte [] hash256(byte [] a) throws NoSuchAlgorithmException {
+    static public byte [] hash256(byte [] a) throws NoSuchAlgorithmException {
         
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         // hash1 size: 32 bytes
@@ -386,7 +388,7 @@ public class StratumConnection
         //System.out.println("hash2 len: " + hash2.length);        
     }    
     
-    String toHexString(byte [] barr) {
+    public static String toHexString(byte [] barr) {
         
         String result = "";
         
@@ -400,7 +402,7 @@ public class StratumConnection
         
     }
     
-    byte [] toByteArray(String bin) {
+    public static byte [] toByteArray(String bin) {
         if (bin.length() % 2 != 0)
             throw new RuntimeException("bin.length() % 2 != 0");
         
@@ -417,7 +419,7 @@ public class StratumConnection
         return result;
     }
     
-    byte [] reverseHash(byte [] barr) {
+    public static byte [] reverseHash(byte [] barr) {
         if (barr.length % 4 != 0)
             throw new RuntimeException("barr.length() % 4 != 0");        
         
@@ -471,12 +473,21 @@ public class StratumConnection
         
         ServerWork work = (ServerWork) originalWork.clone();
         
+        
+        
         // 1. Increase extranonce2
         long extranonce2 = reverse(originalWork.extranonce2.incrementAndGet());
+        
+        // we need to truncate extranonce2, respecting its size!
+        //extranonce2 = (extranonce2 >> 32) & 0xFFFFFFFF;
+        
         work.extranonce2 = new AtomicLong(extranonce2);
         
         // 2. Build final extranonce
         String extranonce = work.extraNonce1Str + extranonce2_padding(work);
+        
+        if (DEBUG)
+            System.out.println(prefix + " extranonce:" + extranonce);
         
         // 3. Put coinbase transaction together
         String coinbase_bin = work.coinbasePart1 + extranonce + work.coinbasePart2;
@@ -520,6 +531,8 @@ public class StratumConnection
         // job.ntime_delta = int(ntime, 16) - int(time.time())         
         long unixTime = System.currentTimeMillis() / 1000L;               
         long ntime = unixTime + work.ntime_delta;
+        
+        work.minerNtime = String.format("%04X", ntime);
              
         // 7. Serialize header
         //block_header = job.serialize_header(merkle_root, ntime, 0)
@@ -527,7 +540,7 @@ public class StratumConnection
                 work.version +
                 work.hashPrevBlock +
                 merkleRootStr + 
-                String.format("%04X", ntime) +
+                work.minerNtime +
                 work.nBit +
                 "00000000000000" +                
                 "800000000000000000000000000000000000000000000000000000000000000000000000000000000080020000";
@@ -556,7 +569,7 @@ public class StratumConnection
         return work;
     }
     
-    byte [] concat(byte [] a, byte [] b) {
+    static byte [] concat(byte [] a, byte [] b) {
         byte [] result = new byte[a.length + b.length];
         
         System.arraycopy(a, 0, result, 0, a.length);
@@ -566,7 +579,7 @@ public class StratumConnection
         return result;
     }
     
-    public byte [] buildMerkleRoot(ServerWork work, byte [] coinbase_hash) throws NoSuchAlgorithmException {
+    static public byte [] buildMerkleRoot(ServerWork work, byte [] coinbase_hash) throws NoSuchAlgorithmException {
         byte [] merkle_root = coinbase_hash;
         
         for (int i = 0; i < work.merkleBranches.length; i++) {
@@ -834,9 +847,9 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
          //
          String nonce;
          String workerName;
-         String extraNonce2Str;
+         //String extraNonce2Str;
          
-         long extranonce1;
+         //long extranonce1;
          AtomicLong extranonce2  = new AtomicLong(0L);
          
          long ntime_delta;
@@ -846,11 +859,23 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
          BigInteger target;
          String target_hex;
          String block_header;
+         String minerNtime;
 
         @Override
         public String toString() {
-            return "ServerWork{" + "jobId=" + jobId + ", hashPrevBlock=" + hashPrevBlock + ", coinbasePart1=" + coinbasePart1 + ", extraNonce1Str=" + extraNonce1Str + ", extranonce2_size=" + extranonce2_size + ", coinbasePart2=" + coinbasePart2 + ", merkleBranches=" + merkleBranches + ", version=" + version + ", nBit=" + nBit + ", nTime=" + nTime + ", cleanJobs=" + cleanJobs + ", difficulty=" + difficulty + ", timestamp=" + timestamp + ", nonce=" + nonce + ", workerName=" + workerName + ", extraNonce2Str=" + extraNonce2Str + ", extranonce1=" + extranonce1 + ", extranonce2=" + extranonce2 + ", ntime_delta=" + ntime_delta + ", target=" + target + ", target_hex=" + target_hex + ", block_header=" + block_header + '}';
+            
+            String mb = "";
+            for (int i = 0; i < merkleBranches.length; i++)
+                mb += "merkleBranches[" + i + "]=" + merkleBranches[i] + ";";
+            
+            return "ServerWork{" + "jobId=" + jobId + ", hashPrevBlock=" + hashPrevBlock + ", coinbasePart1=" + coinbasePart1 + 
+                    ", extraNonce1Str=" + extraNonce1Str + ", extranonce2_size=" + extranonce2_size + ", coinbasePart2=" + coinbasePart2 + ", merkleBranches=" + mb + 
+                    ", version=" + version + ", nBit=" + nBit + ", nTime=" + nTime + ", cleanJobs=" + cleanJobs + ", difficulty=" + difficulty + ", timestamp=" + timestamp + 
+                    ", nonce=" + nonce + ", workerName=" + workerName + //", extranonce1=" + extranonce1 + 
+                    ", extranonce2=" + extranonce2 + ", ntime_delta=" + ntime_delta + ", target=" + target + ", target_hex=" + target_hex + ", block_header=" + block_header + '}';
         }
+
+
 
 
         @Override

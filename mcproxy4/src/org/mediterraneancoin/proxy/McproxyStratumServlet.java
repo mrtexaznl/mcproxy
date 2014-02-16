@@ -268,7 +268,56 @@ public class McproxyStratumServlet  extends HttpServlet {
                 if (DEBUG)
                     System.out.println(prefix + "hash: " + hash.toString(16));  
 
-                System.out.println(prefix + "is hash ok? " + checkHash);                
+                System.out.println(prefix + "is hash ok? " + checkHash);      
+                
+                if (DEBUG)
+                    System.out.println(prefix + " SERVERWORK: " + sessionStorage.serverWork.toString());
+                
+                /*
+                if (DEBUG) {
+                    
+
+                    // 1. Increase extranonce2
+                    long extranonce2 = StratumConnection.reverse(sessionStorage.serverWork.extranonce2.get());
+ 
+
+                    // 2. Build final extranonce
+                    String extranonce = sessionStorage.serverWork.extraNonce1Str + StratumConnection.extranonce2_padding(sessionStorage.serverWork);
+
+                    
+
+                    // 3. Put coinbase transaction together
+                    String coinbase_bin = sessionStorage.serverWork.coinbasePart1 + extranonce + sessionStorage.serverWork.coinbasePart2;
+                            // self.coinb1_bin + extranonce + self.coinb2_bin
+
+                    // 4. Calculate coinbase hash
+                    byte [] coinbase_hash = null;
+                    try {
+                        coinbase_hash = StratumConnection.hash256( StratumConnection.toByteArray(coinbase_bin) );
+                    } catch (NoSuchAlgorithmException ex) {
+                    }
+
+                    // 5. Calculate merkle root
+                    // merkle_root = binascii.hexlify(utils.reverse_hash(job.build_merkle_root(coinbase_hash)))
+                    byte [] merkle_root = null;
+                    try {
+                        merkle_root = StratumConnection.reverseHash ( StratumConnection.buildMerkleRoot(sessionStorage.serverWork, coinbase_hash)  );
+                    } catch (NoSuchAlgorithmException ex) {
+                    }
+                    
+                    String merkleRootStr = StratumConnection.toHexString( merkle_root );
+
+                    System.out.println(prefix + "!!! extranonce:" + extranonce);
+                    System.out.println(prefix + "!!! extranonce2:" + extranonce2);
+                    System.out.println(prefix + "!!! coinbase_bin:" + coinbase_bin);
+                    System.out.println(prefix + "!!! merkleRootStr:" + merkleRootStr);
+                    
+                }
+                
+                */
+                
+                                
+                
                 
                 if (/*!checkHash*/ false ) {
                                         
