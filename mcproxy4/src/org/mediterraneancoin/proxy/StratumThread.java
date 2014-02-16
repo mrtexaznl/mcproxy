@@ -77,22 +77,33 @@ public class StratumThread implements Runnable {
         
         SessionStorage storage = new SessionStorage();
         
+        while (true) {
         
-        try {
-            storage.serverWork = stratumConnection.getWork();
-        } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(StratumThread.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (CloneNotSupportedException ex) {
-            Logger.getLogger(StratumThread.class.getName()).log(Level.SEVERE, null, ex);
-        }        
-        
-        if (storage.serverWork == null || storage.serverWork.block_header == null ) {
-            System.out.println(prefix + "thread " + threadId + " getting null! Waiting for a while...");
             try {
-                Thread.sleep(1000);
-            } catch (InterruptedException ex) {
+                storage.serverWork = stratumConnection.getWork();
+            } catch (NoSuchAlgorithmException ex) {
+                Logger.getLogger(StratumThread.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (CloneNotSupportedException ex) {
+                Logger.getLogger(StratumThread.class.getName()).log(Level.SEVERE, null, ex);
+            }        
+
+            if (storage.serverWork == null || storage.serverWork.block_header == null ) {
+                System.out.println(prefix + "thread " + threadId + " getting null! Waiting for a while...");
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException ex) {
+                }
+                return;
             }
-            return;
+            
+            long delta = (System.currentTimeMillis() - storage.serverWork.timestamp) / 1000;
+            
+            
+            if (delta < 15) 
+                break;
+        
+            System.out.println(prefix + "stratum work request... serverWork too old (" + delta + "s), skipping...");
+            
         }
         
         storage.work = new WorkState(null);

@@ -77,6 +77,8 @@ public class StratumConnection
         boolean result;
         
         String error;
+        
+        long timestamp = System.currentTimeMillis();
 
         @Override
         public int hashCode() {
@@ -217,7 +219,7 @@ public class StratumConnection
      * the worker which submits this work, must update the nTime and nonce fields
      * @param work 
      */    
-    public boolean sendWorkSubmission(ServerWork work) {
+    public StratumResult sendWorkSubmission(ServerWork work) {
         
         // 1. Check if blockheader meets requested difficulty
         // NOTE: this is done previously
@@ -282,22 +284,23 @@ public class StratumConnection
         
         if (res == null) {
             System.out.println(prefix + " sendWorkSubmission error: no response from pool in 10s");
-            return false;
+            
+            StratumResult result = new StratumResult();
+            result.result = false;
+            result.error = "no response from pool in 10s";
+            result.id = -1;
+            
+            return result;
         }
         
-        return res.result;
-        /*
-        while (resultNode.has("sendresult")) {
-            try {
-                Thread.sleep(10);
-            } catch (InterruptedException ex) {
-            }
-        }
-        */
+ 
+        return res;
         
     }
     
     private StratumResult findStratumResult(long requestId) {
+        
+        long now = System.currentTimeMillis();
         
         for (Iterator<StratumResult> i = stratumResults.iterator(); i.hasNext();) {
             StratumResult res = i.next();
@@ -308,6 +311,13 @@ public class StratumConnection
                 
                 return res;
             }            
+            
+            long delta = (now - res.timestamp) / 1000;
+            
+            if (delta > 120)
+                try {
+                    stratumResults.remove(res);
+                } catch (Exception ex) {}
             
         }
         
@@ -435,16 +445,7 @@ public class StratumConnection
         return result;
     }
     
-    /**
-     * the worker which submits this work, must update the nTime and nonce fields
-     * @param work 
-     */
-    private void submitStratumWork(ServerWork work) {
-        
-        
-
-        
-    }
+ 
     
     public static long reverse(long x) {  
         ByteBuffer bbuf = ByteBuffer.allocate(8);  
@@ -473,6 +474,7 @@ public class StratumConnection
         
         ServerWork work = (ServerWork) originalWork.clone();
         
+        work.timestamp = System.currentTimeMillis();
         
         
         // 1. Increase extranonce2

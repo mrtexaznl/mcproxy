@@ -40,9 +40,11 @@ public class HttpServer {
         
         long minDeltaTime = 50;         
         
-        int minQueueLength = 1;
-        int maxQueueLength = 2;
+        int minQueueLength = 2;
+        int maxQueueLength = 5;
 
+        boolean DEBUG = false;
+        
          while (i < args.length) {
 
              if (args[i].equals("-s")) {
@@ -87,7 +89,7 @@ public class HttpServer {
                            );
                    return;                 
              } else if (args[i].equals("-v")) {
-                 McproxyHandler.DEBUG = true;
+                 DEBUG = true;
              }
   
              i++;
@@ -131,6 +133,10 @@ public class HttpServer {
         System.out.println( "connector.getAcceptors(): " +  connector.getAcceptors() );
         System.out.println( "connector.getAcceptQueueSize(): " + connector.getAcceptQueueSize()) ;
  
+        
+        StratumConnection.DEBUG = DEBUG;
+        McproxyStratumServlet.DEBUG = DEBUG;
+        StratumThread.setDEBUG(DEBUG);
         
         //server.setHandler(new McproxyHandler());
         

@@ -316,14 +316,21 @@ public class McproxyStratumServlet  extends HttpServlet {
                 
                 */
                 
-                                
+
+                ObjectNode resultNode = mapper.createObjectNode();
+                 
                 
-                
-                if (/*!checkHash*/ false ) {
+                if (!checkHash/*false*/ ) {
                                         
                     System.out.println(prefix + "returning FALSE to submit request");
                     
-                    answer = "{\"result\":false,\"error\":null,\"id\":1}";
+                    resultNode.put("result", false);
+                    resultNode.put("error", (String) null);
+                    resultNode.put("id", Integer.parseInt(id));
+                    
+                    answer = resultNode.toString();
+                    
+                    //answer = "{\"result\":false,\"error\":null,\"id\":" + id + "}";
                 } else {
                     
                     // TODO: modify sessionStorage.serverWork with correct nonce
@@ -331,13 +338,23 @@ public class McproxyStratumServlet  extends HttpServlet {
                     
                     // submit work to Stratum
                     // CHECK: need to byteswap?
-                    boolean poolSubmitResult = stratumConnection.sendWorkSubmission(sessionStorage.serverWork);
+                    StratumConnection.StratumResult poolSubmitResult = stratumConnection.sendWorkSubmission(sessionStorage.serverWork);
   
                     if (DEBUG) {
                         System.out.println(prefix + "returning " + poolSubmitResult +" to submit request");  
                     }
                     
-                    answer = "{\"result\":" + poolSubmitResult + ",\"error\":null,\"id\":1}";
+                    if (poolSubmitResult.result)
+                        poolSubmitResult.error = null;
+                    
+                    resultNode.put("result", poolSubmitResult.result);
+                    resultNode.put("error", poolSubmitResult.error);
+                    resultNode.put("id", Integer.parseInt(id));
+                    
+                    answer = resultNode.toString();                    
+                    
+                    
+                    //answer = "{\"result\":" + poolSubmitResult.result + ",\"error\":"  + poolSubmitResult.error + ",\"id\":" + id + "}";
                 }
 
                 //String workStr = WorkState.byteSwap(sessionStorage.dataFromWallet.substring(0, 68*2)) +
@@ -354,7 +371,9 @@ public class McproxyStratumServlet  extends HttpServlet {
                         if (delta > 120) {
                             ss.serverWork = null;
                             ss.work = null;
-                            works.remove(ss);
+                            try {
+                                works.remove(ss);
+                            } catch (Exception ex) {}
                         }
 
                     }
