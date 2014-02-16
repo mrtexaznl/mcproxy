@@ -158,6 +158,8 @@ public class McproxyStratumServlet  extends HttpServlet {
 
                 //answer = "{\"result\":false,\"error\":null,\"id\":1}";
                 answer = resultNode.toString();
+                
+                System.out.println("ERROR: " +answer);
 
             } else {
                 
@@ -187,8 +189,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                 String nonceStr = receivedDataStr.substring(76*2, 76*2 + 8);        
                 
                 if (DEBUG) {
-                    System.out.println(prefix + "byteswapped nonce: " + nonceStr);
-                     
+                    System.out.println(prefix + "byteswapped nonce: " + nonceStr);                     
                 }
 
                 
@@ -343,6 +344,8 @@ public class McproxyStratumServlet  extends HttpServlet {
                     resultNode.put("id", Integer.parseInt(id));
                     
                     answer = resultNode.toString();
+                    
+                    System.out.println("ERROR2: " +answer);
                     
                     //answer = "{\"result\":false,\"error\":null,\"id\":" + id + "}";
                 } else {

@@ -1,8 +1,11 @@
 package org.mediterraneancoin.proxy;
 
+import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.eclipse.jetty.server.AbstractConnector;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -27,18 +30,18 @@ public class HttpServer {
         String hostname;
         int port;
 
-        hostname = "node4.mediterraneancoin.org";
+        hostname = "localhost";
         port = 3333;
         
         String bindAddress = "localhost";
         localport = 8080;        
 
-        String workerName = "mrtexaznl.1";
+        String workerName = "yourWorkeName";
         String workerPassword = "12345";
         
         int i = 0;
         
-        long minDeltaTime = 200;         
+        //long minDeltaTime = 200;         
         
         int minQueueLength = 2;
         int maxQueueLength = 8;
@@ -65,10 +68,10 @@ public class HttpServer {
              } else if (args[i].equals("-M")) {
                  i++;
                  maxQueueLength = Integer.parseInt(args[i]);
-             } else if (args[i].equals("-t")) {
+             } /*else if (args[i].equals("-t")) {
                  i++;
                  minDeltaTime = Long.parseLong(args[i]);
-             } else if (args[i].equals("-b")) {
+             } */else if (args[i].equals("-b")) {
                  i++;
                  bindAddress = args[i];
              }  else if (args[i].equals("-l")) {
@@ -76,11 +79,11 @@ public class HttpServer {
                  localport = Integer.parseInt(args[i]);
              } else if (args[i].equals("-h") || args[i].equals("--help")) {
                    System.out.println("parameters:\n" +
-                           "-s: hostname of wallet/pool (default: localhost)\n" + 
-                           "-p: port of wallet/pool (default: 9372)\n" + 
+                           "-s: hostname of stratum pool (default: localhost)\n" + 
+                           "-p: port of stratum pool (default: 3333)\n" + 
                            "-b: bind to local address (default: )\n" +
-                           "-l: local proxy port (default: 8080)\n" + 
-                           "-t: min delta time (default: 200 ms)\n" + 
+                           "-l: local mcproxy port (default: 8080)\n" + 
+                           //"-t: min delta time (default: 200 ms)\n" + 
                            "-m: mininum queue length (default: 2)\n" + 
                            "-M: maximum queue length (default: 8)\n" + 
                            "-u: worker username\n" +
@@ -124,7 +127,7 @@ public class HttpServer {
  
          
     
-        ServerConnector connector = new ServerConnector(server, 8, 8);
+        ServerConnector connector = new ServerConnector(server, 32, 32);
                 //new ServerConnector(server, null, null, null, 16, 16, new HttpConnectionFactory(config));
     
                 //
@@ -176,7 +179,7 @@ public class HttpServer {
                   
             GetworkThread [] getworkThreads = new GetworkThread[cores];
             
-            GetworkThread.setMinDeltaTime(minDeltaTime);
+            //GetworkThread.setMinDeltaTime(minDeltaTime);
 
             GetworkThread.setMinQueueLength(4);
 
@@ -189,33 +192,64 @@ public class HttpServer {
             }
             
         } else {         
-            StratumConnection instance = StratumConnection.getInstance();
             
-            instance.open(hostname, port);
+            final String stratumPoolAddress = hostname;
+            final int stratumPoolPort = port;
+            final String stratumPoolWorkerName = workerName;
+            final String stratumPoolWorkerPassword = workerPassword;
             
+            final int stratumPoolMinQueueLength = minQueueLength;
+            final int stratumPoolMaxQueueLength = maxQueueLength;
             
-            instance.sendWorkerAuthorization(workerName, workerPassword);
-             
-            instance.sendMiningSubscribe();
+            new Thread() {
             
-            //DEBUG
-            //cores = 2;
-            
-            StratumThread [] stratumThreads = new StratumThread[cores];        
-            
-            StratumThread.setMinDeltaTime(minDeltaTime);
+                @Override
+                public void run()  {
+                    //System.out.println("***");
+                    
+                    int cores = Runtime.getRuntime().availableProcessors();
+                    
 
-            StratumThread.setMinQueueLength(minQueueLength);
+                    StratumConnection instance = StratumConnection.getInstance();
+                    
+                    try {
+                        instance.open(stratumPoolAddress, stratumPoolPort);
+                    } catch (IOException ex) {
+                        System.err.println("Error while opening connection to stratum pool " + stratumPoolAddress + "/" + stratumPoolPort + ", " + ex.getMessage());                       
+                    }
+
+
+                    instance.sendWorkerAuthorization(stratumPoolWorkerName, stratumPoolWorkerPassword);
+
+                    instance.sendMiningSubscribe();
+
+                    //for DEBUG only
+                    //cores = 2;
+
+                    StratumThread [] stratumThreads = new StratumThread[cores];        
+ 
+                    StratumThread.setMinQueueLength(stratumPoolMinQueueLength);
+
+                    StratumThread.setMaxQueueLength(stratumPoolMaxQueueLength);
+
+                    for (int h = 0; h < stratumThreads.length; h++) {
+                        stratumThreads[h] = new StratumThread();
+
+                        stratumThreads[h].start();
+                        
+                        try {
+                            Thread.sleep(250);
+                        } catch (InterruptedException ex) { }
+                    }                    
+                    
+                    
+                    
+                    
+                }
             
-            StratumThread.setMaxQueueLength(maxQueueLength);
-
-            for (int h = 0; h < stratumThreads.length; h++) {
-                stratumThreads[h] = new StratumThread();
-
-                stratumThreads[h].start();
-
-                Thread.sleep(250);
-            }
+            }.start();
+            
+            
             
             
         }
@@ -224,6 +258,8 @@ public class HttpServer {
         server.start();
          
         server.join();
+        
+    
        
     }    
 }

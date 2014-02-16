@@ -202,13 +202,37 @@ public class StratumConnection
         
         sendMessage(resultNode);           
         
-        StratumResult res;
+        StratumResult res = null;
         
-        while ((res = findStratumResult(requestId)) == null) {
+        long delta = 0;
+        
+        while ( delta < 20000 && (res = findStratumResult(requestId)) == null) {
             try {
                 Thread.sleep(10);
+                delta += 10;
             } catch (InterruptedException ex) {
             }            
+        }        
+        
+         if (res == null) {
+            if (DEBUG)
+               System.out.println(prefix + "sendWorkerAuthorization error: no response from pool in 20s");
+
+            System.err.println("no response from stratum pool in 20s, while sending credentials; bailing out");
+            System.err.flush();
+            
+            throw new RuntimeException("no response from stratum pool");
+            //return false;
+        } else {
+           if (res.result == false)  {
+               
+            System.err.println("registration with stratum pool not successful, wrong credentials? bailing out");
+            System.err.flush();               
+               
+               throw new RuntimeException("credentials registration with stratum pool failed");
+           }
+             
+             
         }
         
         return res.result;
