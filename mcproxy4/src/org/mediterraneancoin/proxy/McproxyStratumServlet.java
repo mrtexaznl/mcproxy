@@ -163,7 +163,7 @@ public class McproxyStratumServlet  extends HttpServlet {
 
             } else {
                 
-                works.remove( receivedDataStr68 );
+                //works.remove( receivedDataStr68 );
                 
 //            
             //String START = "eecb92d5eefa3c91daed8b7a1ebc3093c15b4b459c05e54d92e78bf535d6c234a3e00426a7648f4ac8214fae1d9262427d2d7e6609f5323b4fd1f887a4aba6cf25eee7bf52fe29b01b01f9321dc38608" +
