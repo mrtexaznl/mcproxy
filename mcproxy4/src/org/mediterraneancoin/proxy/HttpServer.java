@@ -2,6 +2,8 @@ package org.mediterraneancoin.proxy;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -16,6 +18,7 @@ import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
+import static org.mediterraneancoin.proxy.McproxyStratumServlet.works;
 import org.mediterraneancoin.proxy.net.RPCUtils;
 
 /**
@@ -250,7 +253,52 @@ public class HttpServer {
             }.start();
             
             
-            
+            new Thread() {
+                
+                public void run() {
+                    
+                    while (true) {
+                        try {
+                            Thread.sleep(60000);
+                        } catch (InterruptedException ex) { }
+
+                        try {
+                            System.out.println("works.size(): " + works.size());
+
+
+                            for (Iterator<Map.Entry<String, McproxyHandler.SessionStorage>>it=works.entrySet().iterator();it.hasNext();) {
+                            //for (Iterator<String> i = works.keySet().iterator(); i.hasNext();) {
+                                //String key = i.next();
+                                Map.Entry<String, McproxyHandler.SessionStorage> entry = it.next();
+
+                                McproxyHandler.SessionStorage sessionStorage = entry.getValue();
+                                
+                                //McproxyHandler.SessionStorage ss = works.get(key);
+
+                                if (sessionStorage == null)
+                                    continue;
+                                
+                                long delta = (System.currentTimeMillis() - sessionStorage.timestamp) / 1000;
+
+                                if (delta > 120) {
+                                    sessionStorage.serverWork = null;
+                                    sessionStorage.work = null;
+                                     
+                                    it.remove();
+                                }
+
+                            }
+                        } catch (Exception ex) {
+                            System.out.println("Error: " + ex.toString());
+                        }               
+                
+                    }
+                     
+                    
+                }
+                
+                
+            }.start();
             
         }
         

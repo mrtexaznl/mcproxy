@@ -377,26 +377,6 @@ public class McproxyStratumServlet  extends HttpServlet {
                 //String workStr = WorkState.byteSwap(sessionStorage.dataFromWallet.substring(0, 68*2)) +
                 //        receivedDataStr.substring(68*2);
                  
-                try {
-                    for (Iterator<String> i = works.keySet().iterator(); i.hasNext();) {
-                        String key = i.next();
-
-                        McproxyHandler.SessionStorage ss = works.get(key);
-
-                        long delta = (System.currentTimeMillis() - ss.timestamp) / 1000;
-
-                        if (delta > 120) {
-                            ss.serverWork = null;
-                            ss.work = null;
-                            try {
-                                works.remove(ss);
-                            } catch (Exception ex) {}
-                        }
-
-                    }
-                } catch (Exception ex) {
-                    System.out.println("Error: " + ex.toString());
-                }
                 
                 
 
