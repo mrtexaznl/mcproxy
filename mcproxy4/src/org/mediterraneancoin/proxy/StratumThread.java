@@ -73,7 +73,8 @@ public class StratumThread implements Runnable {
                 return;
         }        
         
-        System.out.println(prefix + "stratum work request... thread " + threadId);
+        if (DEBUG)
+            System.out.println(prefix + "stratum work request... thread " + threadId);
         
         SessionStorage storage = new SessionStorage();
         
@@ -263,7 +264,7 @@ public class StratumThread implements Runnable {
             
             //
             if (queue.size() <= 1) {
-                localMinDeltaTime = 10;
+                localMinDeltaTime = 20;
             } else if (queue.size() < maxQueueLength && queue.size() >= minQueueLength) { 
                 if (DEBUG)    
                     System.out.print(threadId + "***+decreasing localMinDeltaTime from " + localMinDeltaTime + " ");
@@ -271,8 +272,8 @@ public class StratumThread implements Runnable {
                 localMinDeltaTime = (localMinDeltaTime * 85) / 100;            
                 
 
-                if (localMinDeltaTime < 10) {
-                    localMinDeltaTime = 10;
+                if (localMinDeltaTime < 20) {
+                    localMinDeltaTime = 20;
                     continue;
                 }                
                 
@@ -287,8 +288,8 @@ public class StratumThread implements Runnable {
                 
                 localMinDeltaTime = (localMinDeltaTime * 85) / 100;
                 
-                if (localMinDeltaTime < 10) {
-                    localMinDeltaTime = 10;
+                if (localMinDeltaTime < 20) {
+                    localMinDeltaTime = 20;
                     continue;
                 }                
                 

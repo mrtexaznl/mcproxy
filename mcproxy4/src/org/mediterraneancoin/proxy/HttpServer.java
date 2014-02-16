@@ -38,10 +38,10 @@ public class HttpServer {
         
         int i = 0;
         
-        long minDeltaTime = 50;         
+        long minDeltaTime = 200;         
         
         int minQueueLength = 2;
-        int maxQueueLength = 5;
+        int maxQueueLength = 8;
 
         boolean DEBUG = false;
         
@@ -80,9 +80,9 @@ public class HttpServer {
                            "-p: port of wallet/pool (default: 9372)\n" + 
                            "-b: bind to local address (default: )\n" +
                            "-l: local proxy port (default: 8080)\n" + 
-                           "-t: min delta time (default: 50 ms)\n" + 
-                           "-m: mininum queue length (default: 1)\n" + 
-                           "-M: mininum queue length (default: 2)\n" + 
+                           "-t: min delta time (default: 200 ms)\n" + 
+                           "-m: mininum queue length (default: 2)\n" + 
+                           "-M: maximum queue length (default: 8)\n" + 
                            "-u: worker username\n" +
                            "-P: worker password\n" +
                            "-v: verbose"
@@ -95,14 +95,17 @@ public class HttpServer {
              i++;
          }       
         
-        System.out.println("MediterraneanCoin Proxy4");
+        System.out.println("MediterraneanCoin Proxy4 - stratum support only!");
         System.out.println("parameters:\n" + 
                 "wallet hostname: " + hostname + "\n" +
                 "wallet port: " + port + "\n" +
                 "bind to local address: " + bindAddress + "\n" +
                 "local proxy port: " + localport + "\n" +
                 "worker username: " + workerName + "\n" +
-                "worker password: " + workerPassword + "\n"
+                "worker password: " + workerPassword + "\n" +
+                "mininum queue length: " + minQueueLength + "\n" +
+                "maximum queue length: " + maxQueueLength + "\n" +                
+                "verbose: " + DEBUG + "\n"
                 );
  
         int cores = Runtime.getRuntime().availableProcessors();
@@ -130,8 +133,10 @@ public class HttpServer {
         connector.setIdleTimeout(30000);
         connector.setStopTimeout(40000);
         
-        System.out.println( "connector.getAcceptors(): " +  connector.getAcceptors() );
-        System.out.println( "connector.getAcceptQueueSize(): " + connector.getAcceptQueueSize()) ;
+        if (DEBUG) {
+            System.out.println( "connector.getAcceptors(): " +  connector.getAcceptors() );
+            System.out.println( "connector.getAcceptQueueSize(): " + connector.getAcceptQueueSize()) ;
+        }
  
         
         StratumConnection.DEBUG = DEBUG;
@@ -194,7 +199,7 @@ public class HttpServer {
             instance.sendMiningSubscribe();
             
             //DEBUG
-            cores = 2;
+            //cores = 2;
             
             StratumThread [] stratumThreads = new StratumThread[cores];        
             

@@ -119,12 +119,14 @@ public class McproxyStratumServlet  extends HttpServlet {
           
         if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize == 0) {
             
-            System.out.println(prefix + "getwork request from miner...");
+            if (DEBUG) 
+                System.out.println(prefix + "getwork request from miner...");
 
             // data has already been byteswapped
             McproxyHandler.SessionStorage sessionStorage = StratumThread.getSessionStorage();
 
-            System.out.println(prefix + "sending getwork: " + sessionStorage.answer);
+            if (DEBUG) 
+                System.out.println(prefix + "sending getwork: " + sessionStorage.answer);
             // 
             works.put(sessionStorage.sentData.substring(0, 68*2) , sessionStorage);
 
@@ -133,7 +135,8 @@ public class McproxyStratumServlet  extends HttpServlet {
 
         } else if (type.toString().equals("application/json") && jsonMethod.equals("getwork") && paramSize != 0) {
 
-            System.out.println(prefix + "submitwork request from miner... works queue size: " + works.size());
+            if (DEBUG) 
+                System.out.println(prefix + "submitwork request from miner... works queue size: " + works.size());
 
             String receivedDataStr = node.get("params").get(0).asText();
             
@@ -143,9 +146,18 @@ public class McproxyStratumServlet  extends HttpServlet {
             
 
             if (sessionStorage == null) {
-                System.out.println(prefix + "WORK NOT FOUND!!! " + receivedDataStr);
+                if (DEBUG) 
+                    System.out.println(prefix + "WORK NOT FOUND!!! " + receivedDataStr);
+                
+                ObjectNode resultNode = mapper.createObjectNode();
+        
 
-                answer = "{\"result\":false,\"error\":null,\"id\":1}";
+                resultNode.put("result", false);
+                resultNode.put("error", "WORK NOT FOUND!!!");
+                resultNode.put("id", Integer.parseInt(id));                
+
+                //answer = "{\"result\":false,\"error\":null,\"id\":1}";
+                answer = resultNode.toString();
 
             } else {
                 
@@ -251,7 +263,8 @@ public class McproxyStratumServlet  extends HttpServlet {
                 
                 String targetStr = new StringBuilder(work.getTarget()).reverse().toString() ; // work.getTarget()
                 
-                System.out.println(prefix + "hashTarget STR: " + targetStr);
+                if (DEBUG) 
+                    System.out.println(prefix + "hashTarget STR: " + targetStr);
                 
                 BigInteger hashTarget = new BigInteger( targetStr ,16);
                 
@@ -268,6 +281,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                 if (DEBUG)
                     System.out.println(prefix + "hash: " + hash.toString(16));  
 
+                
                 System.out.println(prefix + "is hash ok? " + checkHash);      
                 
                 if (DEBUG)
