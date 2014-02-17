@@ -231,7 +231,7 @@ public class StratumConnection
             System.err.println("no response from stratum pool in 20s, while sending credentials; bailing out");
             System.err.flush();
             
-            throw new RuntimeException("no response from stratum pool");
+            //throw new RuntimeException("no response from stratum pool");
             //return false;
         } else {
            if (res.result == false)  {
@@ -239,7 +239,7 @@ public class StratumConnection
                 System.err.println("registration with stratum pool not successful, wrong credentials? bailing out");
                 System.err.flush();               
                
-                throw new RuntimeException("credentials registration with stratum pool failed");
+                //throw new RuntimeException("credentials registration with stratum pool failed");
            } else {
                
                 System.out.println("registration with stratum pool is successful!");
