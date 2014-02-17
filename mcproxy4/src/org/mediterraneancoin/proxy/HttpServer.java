@@ -5,20 +5,10 @@ import java.net.URL;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import org.eclipse.jetty.server.AbstractConnector;
-import org.eclipse.jetty.server.HttpConfiguration;
-import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
-import org.eclipse.jetty.server.nio.NetworkTrafficSelectChannelConnector;
 import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.util.thread.ExecutorThreadPool;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
-import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
 import static org.mediterraneancoin.proxy.McproxyStratumServlet.works;
 import org.mediterraneancoin.proxy.net.RPCUtils;
 
@@ -45,7 +35,7 @@ public class HttpServer {
         
         int i = 0;
         
-        //long minDeltaTime = 200;         
+        long minDeltaTime = 200;         
         
         int minQueueLength = 2;
         int maxQueueLength = 8;
@@ -72,10 +62,10 @@ public class HttpServer {
              } else if (args[i].equals("-M")) {
                  i++;
                  maxQueueLength = Integer.parseInt(args[i]);
-             } /*else if (args[i].equals("-t")) {
+             } else if (args[i].equals("-t")) {
                  i++;
                  minDeltaTime = Long.parseLong(args[i]);
-             } */else if (args[i].equals("-b")) {
+             } else if (args[i].equals("-b")) {
                  i++;
                  bindAddress = args[i];
              }  else if (args[i].equals("-l")) {
@@ -87,7 +77,7 @@ public class HttpServer {
                            "-p: port of stratum pool (default: 3333)\n" + 
                            "-b: bind to local address (default: )\n" +
                            "-l: local mcproxy port (default: 8080)\n" + 
-                           //"-t: min delta time (default: 200 ms)\n" + 
+                           "-t: min delta time (default: 200 ms)\n" + 
                            "-m: mininum queue length (default: 2)\n" + 
                            "-M: maximum queue length (default: 8)\n" + 
                            "-u: worker username\n" +
@@ -183,7 +173,7 @@ public class HttpServer {
                   
             GetworkThread [] getworkThreads = new GetworkThread[cores];
             
-            //GetworkThread.setMinDeltaTime(minDeltaTime);
+            GetworkThread.setMinDeltaTime(minDeltaTime);
 
             GetworkThread.setMinQueueLength(4);
 
@@ -196,6 +186,7 @@ public class HttpServer {
             }
             
         } else {         
+            
             
             final String stratumPoolAddress = hostname;
             final int stratumPoolPort = port;
@@ -274,6 +265,8 @@ public class HttpServer {
             //for DEBUG only
             //cores = 2;
 
+            StratumThread.setMinDeltaTime(minDeltaTime);            
+            
             StratumThread [] stratumThreads = new StratumThread[cores];        
 
             StratumThread.setMinQueueLength(minQueueLength);
