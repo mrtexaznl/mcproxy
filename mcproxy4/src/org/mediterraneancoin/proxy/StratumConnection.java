@@ -1161,7 +1161,7 @@ params[8] = Clean Jobs. If true, miners should abort their current work and imme
             
             StratumResult result = new StratumResult();
             result.id = msg.get("id").asLong();
-            result.error = msg.get("error").asText();
+            result.error = msg.get("error").toString();
             result.result = msg.get("result").asBoolean();
             
             stratumResults.add(result);
