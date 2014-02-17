@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -159,7 +160,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                 //answer = "{\"result\":false,\"error\":null,\"id\":1}";
                 answer = resultNode.toString();
                 
-                System.out.println("ERROR: " +answer);
+                System.out.println(new Date() + " " + "ERROR: " +answer);
 
             } else {
                 
@@ -283,7 +284,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                     System.out.println(prefix + "hash: " + hash.toString(16));  
 
                 
-                System.out.println(prefix + "is hash ok? " + checkHash);      
+                System.out.println(new Date() + " " + prefix + "is hash ok? " + checkHash);      
                 
                 if (DEBUG)
                     System.out.println(prefix + " SERVERWORK: " + sessionStorage.serverWork.toString());
@@ -345,7 +346,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                     
                     answer = resultNode.toString();
                     
-                    System.out.println("ERROR2: " +answer);
+                    System.out.println(new Date() + " " + "ERROR2: " +answer);
                     
                     //answer = "{\"result\":false,\"error\":null,\"id\":" + id + "}";
                 } else {
@@ -370,7 +371,7 @@ public class McproxyStratumServlet  extends HttpServlet {
                     
                     answer = resultNode.toString();                    
                     
-                    System.out.println("SUBMIT: " +answer);
+                    System.out.println(new Date() + " " + "SUBMIT: " +answer);
                     //answer = "{\"result\":" + poolSubmitResult.result + ",\"error\":"  + poolSubmitResult.error + ",\"id\":" + id + "}";
                 }
 

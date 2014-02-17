@@ -237,7 +237,7 @@ public class HttpServer {
                         long delta1 = (now - lastOutput) / 1000;
                         long delta2 = (now - lastInput) / 1000;
                         
-                        if (delta1 > 120 || delta2 > 120) {
+                        if (/*delta1 > 120 ||*/ delta2 > 120) {
                             System.err.println(new Date() + " - current connection to stratum pool has timed! reopening a new one...");
                             System.err.flush();
                             
@@ -245,6 +245,10 @@ public class HttpServer {
                                 instance.close();
                             } catch (Exception ex) {      
                                 ex.printStackTrace();
+                            }
+                            try {
+                                Thread.sleep(5000);
+                            } catch (InterruptedException ex) {
                             }
                             
                             instance = StratumConnection.reset();
