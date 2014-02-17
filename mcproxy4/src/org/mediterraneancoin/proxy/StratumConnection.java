@@ -1127,6 +1127,8 @@ False]
                 if (DEBUG)
                     System.out.println(prefix + " cleanJobs == true! cleaning work queue");
                 
+                StratumThread.getQueue().clear();
+                
                 workQueue.clear();
             }
             

@@ -55,7 +55,13 @@ public class StratumThread implements Runnable {
         new Thread(this).start();
         
     }
+
+    public static ConcurrentLinkedQueue<SessionStorage> getQueue() {
+        return queue;
+    }
   
+    
+    
     
     public void getWorkFromStratum() {
         
