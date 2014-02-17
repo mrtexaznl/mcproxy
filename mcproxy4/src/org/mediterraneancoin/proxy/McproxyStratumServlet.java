@@ -361,8 +361,8 @@ public class McproxyStratumServlet  extends HttpServlet {
                         System.out.println(prefix + "returning " + poolSubmitResult +" to submit request");  
                     }
                     
-                    if (!poolSubmitResult.result && poolSubmitResult.error != null)
-                        poolSubmitResult.error = null;
+                    //if (!poolSubmitResult.result && poolSubmitResult.error != null)
+                    poolSubmitResult.error = null;
                     
                     resultNode.put("result", poolSubmitResult.result);
                     resultNode.put("error", poolSubmitResult.error);
