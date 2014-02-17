@@ -1021,10 +1021,12 @@ False]
         
         String msgStr = msg.toString();
         
+        boolean debugthis = true;
+        
         if (msgStr.contains("\"mining.notify\"") && msgStr.contains("result")) {
             
-            if (DEBUG)
-                System.out.println(prefix + "MESSAGE mining.notify (work subscription confirmation)");
+            if (debugthis || DEBUG)
+                System.out.println(prefix + "MESSAGE mining.notify (work subscription confirmation) " + msgStr);
             
             // {"error":null,"id":6268754711428788574,"result":[["mining.notify","ae6812eb4cd7735a302a8a9dd95cf71f"],"f8000008",4]}
             
@@ -1061,8 +1063,8 @@ False]
             
             return;
         } else if (msgStr.contains("\"mining.set_difficulty\"")) {
-            if (DEBUG)
-                System.out.println(prefix + "MESSAGE mining.set_difficulty");
+            if (debugthis || DEBUG)
+                System.out.println(prefix + "MESSAGE mining.set_difficulty " + msgStr);
             // {"params":[256],"id":null,"method":"mining.set_difficulty"}
             
             ArrayNode paramsNode = (ArrayNode) msg.get("params");
@@ -1077,8 +1079,8 @@ False]
             }
             return;
         } else if (msgStr.contains("\"mining.notify\"") && msgStr.contains("params")) {
-            if (DEBUG)
-                System.out.println(prefix + "MESSAGE mining.notify (work push)");
+            if (debugthis || DEBUG)
+                System.out.println(prefix + "MESSAGE mining.notify (work push) " + msgStr);
             
             ArrayNode params = (ArrayNode) msg.get("params");
             
@@ -1152,7 +1154,7 @@ params[8] = Clean Jobs. If true, miners should abort their current work and imme
             return;            
         } else if (msgStr.contains("\"error\"") && msgStr.contains("\"result\"")) {
             
-            boolean debugthis = true;
+            
             
             if (debugthis || DEBUG)
                 System.out.println(prefix + "MESSAGE result: " + msgStr);
