@@ -304,7 +304,7 @@ public class HttpServer {
                         } catch (InterruptedException ex) { }
 
                         try {
-                            System.out.println("works.size(): " + works.size());
+                            System.out.println("BEFORE works.size(): " + works.size());
 
 
                             for (Iterator<Map.Entry<String, McproxyHandler.SessionStorage>>it=works.entrySet().iterator();it.hasNext();) {
@@ -326,9 +326,13 @@ public class HttpServer {
                                     sessionStorage.work = null;
                                      
                                     it.remove();
+                                } else {
+                                    System.out.println(sessionStorage.serverWork.block_header.substring(0, 80*2));
                                 }
 
                             }
+                            
+                            System.out.println("AFTER works.size(): " + works.size());
                         } catch (Exception ex) {
                             System.out.println("Error: " + ex.toString());
                         }               
