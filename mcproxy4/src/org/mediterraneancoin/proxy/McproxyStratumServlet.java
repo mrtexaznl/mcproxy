@@ -368,6 +368,11 @@ public class McproxyStratumServlet  extends HttpServlet {
                     //if (!poolSubmitResult.result && poolSubmitResult.error != null)
                     poolSubmitResult.error = null;
                     
+                    if (!poolSubmitResult.result) {
+                        System.out.println(prefix + " work age: " + (System.currentTimeMillis() - sessionStorage.serverWork.timestamp) / 1000);
+                    }
+                    
+                    
                     resultNode.put("result", poolSubmitResult.result);
                     resultNode.put("error", poolSubmitResult.error);
                     resultNode.put("id", Integer.parseInt(id));
