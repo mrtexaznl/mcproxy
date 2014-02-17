@@ -42,6 +42,8 @@ public class HttpServer {
 
         boolean DEBUG = false;
         
+        int cores = Runtime.getRuntime().availableProcessors();
+        
          while (i < args.length) {
 
              if (args[i].equals("-s")) {
@@ -65,6 +67,9 @@ public class HttpServer {
              } else if (args[i].equals("-t")) {
                  i++;
                  minDeltaTime = Long.parseLong(args[i]);
+             } else if (args[i].equals("-T")) {
+                 i++;
+                 cores = Integer.parseInt(args[i]);
              } else if (args[i].equals("-b")) {
                  i++;
                  bindAddress = args[i];
@@ -77,7 +82,8 @@ public class HttpServer {
                            "-p: port of stratum pool (default: 3333)\n" + 
                            "-b: bind to local address (default: )\n" +
                            "-l: local mcproxy port (default: 8080)\n" + 
-                           "-t: min delta time (default: 200 ms)\n" + 
+                           "-t: minimum delta time (default: 200 ms)\n" + 
+                           "-T: number of threads (default: number of cores, " + cores + ")\n" + 
                            "-m: mininum queue length (default: 2)\n" + 
                            "-M: maximum queue length (default: 8)\n" + 
                            "-u: worker username\n" +
@@ -101,11 +107,13 @@ public class HttpServer {
                 "worker username: " + workerName + "\n" +
                 "worker password: " + workerPassword + "\n" +
                 "mininum queue length: " + minQueueLength + "\n" +
-                "maximum queue length: " + maxQueueLength + "\n" +                
+                "maximum queue length: " + maxQueueLength + "\n" +    
+                "minimum delta time: " + minDeltaTime + "\n" + 
+                "number of threads: " + cores + "\n" + 
                 "verbose: " + DEBUG + "\n"
                 );
  
-        int cores = Runtime.getRuntime().availableProcessors();
+        
         
         System.out.println("number of detected cores: " + cores);
         
