@@ -1124,7 +1124,7 @@ False]
             newServerWork.ntime_delta = Long.parseLong(newServerWork.nTime, 16) - unixTime;
             
             if (newServerWork.cleanJobs) {
-                if (DEBUG)
+                if (true || DEBUG)
                     System.out.println(prefix + " cleanJobs == true! cleaning work queue");
                 
                 StratumThread.getQueue().clear();
