@@ -152,13 +152,13 @@ public class McproxyStratumServlet  extends HttpServlet {
         
 
                 resultNode.put("result", false);
-                resultNode.put("error", "WORK NOT FOUND!!!");
+                resultNode.put("error", (String) null);
                 resultNode.put("id", Integer.parseInt(id));                
 
                 //answer = "{\"result\":false,\"error\":null,\"id\":1}";
                 answer = resultNode.toString();
                 
-                System.out.println(new Date() + " " + "ERROR: " +answer);
+                System.out.println(new Date() + " " + "ERROR: WORK NOT FOUND!!! - " +answer);
 
             } else {
                 

@@ -217,10 +217,11 @@ public class HttpServer {
                         System.err.println("Error while opening connection to stratum pool " + stratumPoolAddress + "/" + stratumPoolPort + ", " + ex.getMessage());                       
                     }
 
+                    instance.sendMiningSubscribe();
 
                     instance.sendWorkerAuthorization(stratumPoolWorkerName, stratumPoolWorkerPassword);
 
-                    instance.sendMiningSubscribe();
+                    
 
                 
                     while (true) {
@@ -327,7 +328,7 @@ public class HttpServer {
                                      
                                     it.remove();
                                 } else {
-                                    System.out.println(sessionStorage.serverWork.block_header.substring(0, 80*2));
+                                    //System.out.println(sessionStorage.serverWork.block_header.substring(0, 80*2));
                                 }
 
                             }
