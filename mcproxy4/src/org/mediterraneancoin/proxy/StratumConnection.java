@@ -1147,13 +1147,17 @@ params[8] = Clean Jobs. If true, miners should abort their current work and imme
             }
             return;            
         } else if (msgStr.contains("\"error\"") && msgStr.contains("\"result\"")) {
-            if (DEBUG)
-                System.out.println(prefix + "MESSAGE result");
+            
+            boolean debugthis = true;
+            
+            if (debugthis || DEBUG)
+                System.out.println(prefix + "MESSAGE result: " + msgStr);
             
             lastOperationResult = msg.get("result").asBoolean();
                 
-            if (DEBUG)
-                System.out.println(prefix + "result = " + lastOperationResult);
+            if (debugthis || DEBUG) {
+               System.out.println(prefix + "result = " + lastOperationResult);
+            }
             
             StratumResult result = new StratumResult();
             result.id = msg.get("id").asLong();
@@ -1162,7 +1166,9 @@ params[8] = Clean Jobs. If true, miners should abort their current work and imme
             
             stratumResults.add(result);
             
-            if (DEBUG) {
+            if (debugthis || DEBUG) {
+                System.out.println(prefix + "complete result = " + result);
+                
                 System.out.println(prefix + "stratumResults size: " + stratumResults.size());
 
                 System.out.println();
