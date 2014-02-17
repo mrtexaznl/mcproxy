@@ -848,7 +848,11 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
                         if (DEBUG)
                             System.out.println("In: " + msg.toString());
                         
-                        processInMessage(msg);
+                        try {
+                            processInMessage(msg);
+                        } catch (Exception ex) {
+                            System.err.println(prefix + " exception in InThread: " + ex.toString());
+                        }
                     }
 
                 }
