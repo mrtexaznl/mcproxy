@@ -62,6 +62,8 @@ public class StratumConnection
     private LinkedBlockingQueue<ObjectNode> out_queue = new LinkedBlockingQueue<ObjectNode>();
     private SecureRandom rnd;
     
+    private LinkedBlockingQueue<String> okJobs = new LinkedBlockingQueue<String>();
+    
     static final ObjectMapper mapper = new ObjectMapper();
       
     String serverAddress;
@@ -260,6 +262,19 @@ public class StratumConnection
      */    
     public StratumResult sendWorkSubmission(ServerWork work) {
         
+        if (!okJobs.contains(work.jobId)) {
+            
+            System.out.println(prefix + " sendWorkSubmission error: job " + work.jobId + " is no more valid!");
+            
+            StratumResult result = new StratumResult();
+            result.result = false;
+            result.error = "job " + work.jobId + " is no more valid!";
+            result.id = 1;
+            
+            return result;            
+            
+        }
+        
         // 1. Check if blockheader meets requested difficulty
         // NOTE: this is done previously
         
@@ -328,7 +343,7 @@ public class StratumConnection
             StratumResult result = new StratumResult();
             result.result = false;
             result.error = "no response from pool in 10s";
-            result.id = -1;
+            result.id = 1;
             
             return result;
         }
@@ -1129,8 +1144,14 @@ False]
                 
                 StratumThread.getQueue().clear();
                 
+                // also clear the list of acceptable jobs
+                okJobs.clear();
+                
                 workQueue.clear();
             }
+            
+            if (!okJobs.contains(newServerWork.jobId))
+               okJobs.add(newServerWork.jobId);
             
             workQueue.add(newServerWork);
             

@@ -33,6 +33,7 @@ public class StratumThread implements Runnable {
     
     private static final ConcurrentLinkedQueue<McproxyHandler.SessionStorage> queue = new ConcurrentLinkedQueue<McproxyHandler.SessionStorage>();
     
+    
     private static boolean DEBUG = true;
     private static final String prefix = "THREAD ";
     

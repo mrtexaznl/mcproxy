@@ -6,7 +6,6 @@ import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -16,7 +15,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.mediterraneancoin.miner.SuperHasher;
-import static org.mediterraneancoin.proxy.net.RPCUtils.tohex;
 import org.mediterraneancoin.proxy.net.WorkState;
 
 /**
@@ -40,7 +38,7 @@ public class McproxyStratumServlet  extends HttpServlet {
      
     private final static StratumConnection stratumConnection = StratumConnection.getInstance();
 
-    
+
     SuperHasher hasher;
     
     @Override
