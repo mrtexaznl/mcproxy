@@ -2,6 +2,7 @@ package org.mediterraneancoin.proxy;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -200,18 +201,14 @@ public class HttpServer {
             final int stratumPoolPort = port;
             final String stratumPoolWorkerName = workerName;
             final String stratumPoolWorkerPassword = workerPassword;
-            
-            final int stratumPoolMinQueueLength = minQueueLength;
-            final int stratumPoolMaxQueueLength = maxQueueLength;
+             
             
             new Thread() {
             
                 @Override
                 public void run()  {
                     //System.out.println("***");
-                    
-                    int cores = Runtime.getRuntime().availableProcessors();
-                    
+ 
 
                     StratumConnection instance = StratumConnection.getInstance();
                     
@@ -226,24 +223,40 @@ public class HttpServer {
 
                     instance.sendMiningSubscribe();
 
-                    //for DEBUG only
-                    //cores = 2;
-
-                    StratumThread [] stratumThreads = new StratumThread[cores];        
- 
-                    StratumThread.setMinQueueLength(stratumPoolMinQueueLength);
-
-                    StratumThread.setMaxQueueLength(stratumPoolMaxQueueLength);
-
-                    for (int h = 0; h < stratumThreads.length; h++) {
-                        stratumThreads[h] = new StratumThread();
-
-                        stratumThreads[h].start();
-                        
+                
+                    while (true) {
                         try {
-                            Thread.sleep(250);
+                            Thread.sleep(60000);
                         } catch (InterruptedException ex) { }
-                    }                    
+                        
+                        long now = System.currentTimeMillis();
+                        
+                        long lastOutput = instance.getLastOutputNetworkAction();
+                        long lastInput = instance.getLastInputNetworkAction();
+                        
+                        long delta1 = (now - lastOutput) / 1000;
+                        long delta2 = (now - lastInput) / 1000;
+                        
+                        if (delta1 > 120 || delta2 > 120) {
+                            System.err.println(new Date() + " - current connection to stratum pool has timed! reopening a new one...");
+                            System.err.flush();
+                            
+                            try {
+                                instance.close();
+                            } catch (Exception ex) {      
+                                ex.printStackTrace();
+                            }
+                            
+                            instance = StratumConnection.reset();
+                            
+                            instance.sendWorkerAuthorization(stratumPoolWorkerName, stratumPoolWorkerPassword);
+
+                            instance.sendMiningSubscribe();                 
+                            
+                            
+                        }
+                        
+                    }
                     
                     
                     
@@ -251,6 +264,29 @@ public class HttpServer {
                 }
             
             }.start();
+            
+            Thread.sleep(5000);
+
+            //for DEBUG only
+            //cores = 2;
+
+            StratumThread [] stratumThreads = new StratumThread[cores];        
+
+            StratumThread.setMinQueueLength(minQueueLength);
+
+            StratumThread.setMaxQueueLength(maxQueueLength);
+
+            for (int h = 0; h < stratumThreads.length; h++) {
+                stratumThreads[h] = new StratumThread();
+
+                stratumThreads[h].start();
+
+                try {
+                    Thread.sleep(1000 / cores);
+                } catch (InterruptedException ex) { }
+            }                
+            
+            
             
             
             new Thread() {

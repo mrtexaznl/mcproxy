@@ -33,17 +33,25 @@ public class StratumConnection
         
         return instance;
     }
+    
+    public static synchronized StratumConnection reset() {
+        instance = new StratumConnection();
+        return instance;
+    }
  
     private Socket sock;
 
-    private AtomicLong last_network_action;
+    //private AtomicLong last_network_action;
+    private AtomicLong lastOutputNetworkAction = new AtomicLong(System.currentTimeMillis());
+    private AtomicLong lastInputNetworkAction = new AtomicLong(System.currentTimeMillis());
+    
     private volatile boolean open;
     private volatile boolean miningSubscribed;
     
     private String workerName, workerPassword;
  
    
-    private byte[] extranonce1;
+    //private byte[] extranonce1;
     
     private String extraNonce1Str;
     private long extranonce2_size;
@@ -158,7 +166,7 @@ public class StratumConnection
         
         this.sock = new Socket(serverAddress, port);       
         
-        last_network_action=new AtomicLong(System.nanoTime());
+        //last_network_action=new AtomicLong(System.nanoTime());
         
         open=true;
         
@@ -226,10 +234,15 @@ public class StratumConnection
         } else {
            if (res.result == false)  {
                
-            System.err.println("registration with stratum pool not successful, wrong credentials? bailing out");
-            System.err.flush();               
+                System.err.println("registration with stratum pool not successful, wrong credentials? bailing out");
+                System.err.flush();               
                
-               throw new RuntimeException("credentials registration with stratum pool failed");
+                throw new RuntimeException("credentials registration with stratum pool failed");
+           } else {
+               
+                System.out.println("registration with stratum pool is successful!");
+                System.out.flush();                
+               
            }
              
              
@@ -333,7 +346,7 @@ public class StratumConnection
             if (res.id == requestId) {
                 if (DEBUG)
                     System.out.println("findStratumResult: " + res.toString());
-                
+                                
                 stratumResults.remove(res);
                 
                 return res;
@@ -713,20 +726,13 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
         catch(Throwable t){}
     }
 
-    public long getLastNetworkAction()
-    {
-        return last_network_action.get();
-    }
 
     public long getNextRequestId()
     {
         return nextRequestId.getAndIncrement();        
     }
 
-    protected void updateLastNetworkAction()
-    {
-        last_network_action.set(System.nanoTime());
-    }
+ 
 
     public void sendMessage(ObjectNode msg)
     {
@@ -793,7 +799,8 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
                         if (DEBUG)
                             System.out.println("Out: " + msg.toString());
                         
-                        updateLastNetworkAction();
+                        lastOutputNetworkAction.set(System.currentTimeMillis());
+                        //updateLastNetworkAction();
                     }
 
                 }
@@ -828,7 +835,9 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
                 while(open)
                 {
                     String line = scan.nextLine();
-                    updateLastNetworkAction();
+                    //updateLastNetworkAction();
+                    lastInputNetworkAction.set(System.currentTimeMillis());
+                    
                     line = line.trim();
                     if (line.length() > 0)
                     {
@@ -1386,6 +1395,16 @@ processInMessage
     public void setDifficulty(long difficulty) {
         this.difficulty = difficulty;
     }
+
+    public long getLastOutputNetworkAction() {
+        return lastOutputNetworkAction.get();
+    }
+
+    public long getLastInputNetworkAction() {
+        return lastInputNetworkAction.get();
+    }
+    
+    
 
 }
 

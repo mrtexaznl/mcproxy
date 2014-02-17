@@ -100,7 +100,7 @@ public class StratumThread implements Runnable {
             long delta = (System.currentTimeMillis() - storage.serverWork.timestamp) / 1000;
             
             
-            if (delta < 15) 
+            if (delta < 30) 
                 break;
         
             System.out.println(prefix + "stratum work request... serverWork too old (" + delta + "s), skipping...");
