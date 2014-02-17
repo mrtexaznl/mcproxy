@@ -300,7 +300,7 @@ public class HttpServer {
                     
                     while (true) {
                         try {
-                            Thread.sleep(60000);
+                            Thread.sleep(30000);
                         } catch (InterruptedException ex) { }
 
                         try {
@@ -321,7 +321,7 @@ public class HttpServer {
                                 
                                 long delta = (System.currentTimeMillis() - sessionStorage.timestamp) / 1000;
 
-                                if (delta > 120) {
+                                if (delta > 30) {
                                     sessionStorage.serverWork = null;
                                     sessionStorage.work = null;
                                      
