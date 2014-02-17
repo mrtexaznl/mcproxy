@@ -172,6 +172,8 @@ public class StratumConnection
         
         new OutThread().start();
         new InThread().start();        
+        
+        System.out.println("successfully connected to stratum pool " + serverAddress + "/" + port);
     }
     
     public void sendMiningSubscribe() {
