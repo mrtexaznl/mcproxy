@@ -9,7 +9,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.mediterraneancoin.miner.SuperHasher;
 import org.mediterraneancoin.proxy.McproxyHandler.SessionStorage;
-import org.mediterraneancoin.proxy.StratumConnection.ServerWork;
 import static org.mediterraneancoin.proxy.net.RPCUtils.tohex;
 import org.mediterraneancoin.proxy.net.WorkState;
 
@@ -68,12 +67,12 @@ public class StratumThread implements Runnable {
         
         long now = System.currentTimeMillis();
         
-        if (now - lastGetwork < localMinDeltaTime) {
+        if (now - lastGetwork < /*localMinDeltaTime*/ minDeltaTime) {
             if (DEBUG)
                 System.out.println(prefix + "too near getWorkFromStratum, skipping; delta = " + (now - lastGetwork) + ", localMinDeltaTime=" + localMinDeltaTime);
 
                 try {
-                    Thread.sleep(localMinDeltaTime - (now - lastGetwork));
+                    Thread.sleep(/*localMinDeltaTime*/ minDeltaTime - (now - lastGetwork));
                 } catch (InterruptedException ex) {             
                 }
             
@@ -110,7 +109,7 @@ public class StratumThread implements Runnable {
             if (delta < 30) 
                 break;
         
-            System.out.println(prefix + "stratum work request... serverWork too old (" + delta + "s), skipping...");
+            System.out.println(prefix + "stratum work request... serverWork too old (" + delta + " s), skipping...");
             
         }
         
@@ -271,16 +270,16 @@ public class StratumThread implements Runnable {
             
             //
             if (queue.size() <= 1) {
-                localMinDeltaTime = 20;
+                localMinDeltaTime = minDeltaTime; //20;
             } else if (queue.size() < maxQueueLength && queue.size() >= minQueueLength) { 
                 if (DEBUG)    
-                    System.out.print(threadId + "***+decreasing localMinDeltaTime from " + localMinDeltaTime + " ");
+                    System.out.print(threadId + "*** decreasing localMinDeltaTime from " + localMinDeltaTime + " ");
                 
                 localMinDeltaTime = (localMinDeltaTime * 85) / 100;            
                 
 
-                if (localMinDeltaTime < 20) {
-                    localMinDeltaTime = 20;
+                if (localMinDeltaTime < /*20*/ minDeltaTime) {
+                    localMinDeltaTime = /*20*/ minDeltaTime;
                     continue;
                 }                
                 
@@ -291,12 +290,12 @@ public class StratumThread implements Runnable {
             } else if (queue.size() < minQueueLength) {
                 
                 if (DEBUG)    
-                    System.out.print(threadId + "***decreasing localMinDeltaTime from " + localMinDeltaTime + " ");
+                    System.out.print(threadId + "*** decreasing localMinDeltaTime from " + localMinDeltaTime + " ");
                 
                 localMinDeltaTime = (localMinDeltaTime * 85) / 100;
                 
-                if (localMinDeltaTime < 20) {
-                    localMinDeltaTime = 20;
+                if (localMinDeltaTime < /*20*/ minDeltaTime) {
+                    localMinDeltaTime = /*20*/ minDeltaTime;
                     continue;
                 }                
                 
@@ -306,7 +305,7 @@ public class StratumThread implements Runnable {
             } else if (queue.size() >= /*(int)((minQueueLength * 3.) / 2.)*/ maxQueueLength) {
                 
                 if (DEBUG)
-                    System.out.print(threadId + "+++increasing localMinDeltaTime from " + localMinDeltaTime + " ");
+                    System.out.print(threadId + "+++ increasing localMinDeltaTime from " + localMinDeltaTime + " ");
                 
                 localMinDeltaTime =  (localMinDeltaTime * 115) / 100;
                 
