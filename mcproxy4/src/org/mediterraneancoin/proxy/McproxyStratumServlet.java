@@ -52,7 +52,8 @@ public class McproxyStratumServlet  extends HttpServlet {
         }
     }
     
-    
+    double averageGetworkDelay = 0;
+    long numberOfGetworkRequests = 0;
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -120,9 +121,24 @@ public class McproxyStratumServlet  extends HttpServlet {
             
             if (DEBUG) 
                 System.out.println(prefix + "getwork request from miner...");
+            
+
+            
+            numberOfGetworkRequests++;           
+            
+            
+            long start = System.currentTimeMillis();
 
             // data has already been byteswapped
             McproxyHandler.SessionStorage sessionStorage = StratumThread.getSessionStorage();
+            
+            long end = System.currentTimeMillis();
+            
+            long delta = end - start;
+            
+            averageGetworkDelay = ((averageGetworkDelay * (numberOfGetworkRequests-1)) + delta) / numberOfGetworkRequests;
+            
+            System.out.println(prefix + " GETWORK  " + delta + " ms  " + end + ", average waiting time=" + (long)averageGetworkDelay + " ms");
 
             if (DEBUG) 
                 System.out.println(prefix + "sending getwork: " + sessionStorage.answer);

@@ -3,6 +3,7 @@ package org.mediterraneancoin.proxy;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -63,11 +64,26 @@ public class StratumThread implements Runnable {
     }
   
     
+    private static final AtomicBoolean quickRestart = new AtomicBoolean(true);
     
+    public static void reset() {
+        quickRestart.set(true);
+    }
     
     public void getWorkFromStratum() {  
         
-        while (System.currentTimeMillis() - lastGlobalGetwork.get() < minDeltaTime) {
+        while ((System.currentTimeMillis() - lastGlobalGetwork.get() < minDeltaTime)) {
+            
+            if (quickRestart.get()) {
+                synchronized(quickRestart) {
+                    if (quickRestart.get()) {
+                        quickRestart.set(false);
+                        
+                        if (queue.size() == 0)
+                           break;
+                    }
+                }
+            }
             
             long waitTime = minDeltaTime - (System.currentTimeMillis() - lastGlobalGetwork.get());
             waitTime = waitTime / 10;
@@ -80,7 +96,12 @@ public class StratumThread implements Runnable {
             }            
         }
         
+        quickRestart.set(false);
+        
         lastGlobalGetwork.set(System.currentTimeMillis());
+        
+        System.out.println(prefix + " " + threadId +" PREPARE WORK " + lastGlobalGetwork.get() +
+                ", queue size: " + queue.size());
         
         if (DEBUG)
             System.out.println(prefix + "stratum work request... thread " + threadId);
@@ -209,11 +230,19 @@ public class StratumThread implements Runnable {
     
     public void cleanup() {
         
+        if (true)
+            return;
+        
         while (queue.size() > maxQueueLength) {
             if (DEBUG)
                 System.out.println("queue.size(): " + queue.size());
             
+            
+            
             SessionStorage item = queue.poll();
+            
+            System.out.println(prefix + " CLEANUP " + item.timestamp);
+            
             
             item.work.setUtils(null);
             item.work = null;
@@ -267,7 +296,7 @@ public class StratumThread implements Runnable {
             long now = System.currentTimeMillis();
             
             try {
-                Thread.sleep( localMinDeltaTime / 2 );
+                Thread.sleep( localMinDeltaTime );
             } catch (InterruptedException ex) {
             }
             

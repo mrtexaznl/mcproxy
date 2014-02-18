@@ -1145,6 +1145,7 @@ False]
                     System.out.println(prefix + " cleanJobs == true! cleaning work queue");
                 
                 StratumThread.getQueue().clear();
+                StratumThread.reset();
                 
                 // also clear the list of acceptable jobs
                 okJobs.clear();
