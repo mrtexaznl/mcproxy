@@ -121,6 +121,30 @@ public class StratumConnection
     
     public static void main(String [] arg) throws IOException, InterruptedException, NoSuchAlgorithmException, CloneNotSupportedException {
         
+        if (true) {
+            String s1 = "00000000000000000000000000000000000000000000000028ac010000000000";
+            String s2 = "00000000FFFF0000000000000000000000000000000000000000000000000000";
+            
+            System.out.println(new BigInteger(s1, 16).toString(16));
+            
+            BigInteger b0 = new BigInteger(s2, 16);
+            
+            BigInteger b1 = new BigInteger(new StringBuilder(s1).reverse().toString(), 16);
+            
+            System.out.println(b1.toString(16));
+            System.out.println(b0.toString(16));
+            
+            
+            BigInteger d = b0.divide(b1);
+            
+            System.out.println(d.toString(16));
+            System.out.println(d.toString());
+            
+            return;
+        }
+        
+        
+        
         StratumConnection connection = new StratumConnection();
         
         if (true) {
