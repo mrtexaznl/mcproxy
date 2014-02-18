@@ -57,7 +57,7 @@ public class StratumConnection
     private long extranonce2_size;
  
     
-    private AtomicLong nextRequestId = new AtomicLong(10000);
+    private AtomicLong nextRequestId = new AtomicLong(0);
 
     private LinkedBlockingQueue<ObjectNode> out_queue = new LinkedBlockingQueue<ObjectNode>();
     private SecureRandom rnd;
@@ -183,8 +183,8 @@ public class StratumConnection
         // {"id": 1, "method": "mining.subscribe", "params": []}\n
         resultNode.put("id", nextRequestId.incrementAndGet() );
         resultNode.put("method", "mining.subscribe");    
-        
-        resultNode.putArray("params");
+        ArrayNode putArray = resultNode.putArray("params");
+        putArray.add("mcproxy4");
         
         if (DEBUG)
             System.out.println(resultNode.asText());
@@ -856,6 +856,8 @@ https://github.com/slush0/stratum-mining-proxy/blob/master/mining_libs/jobs.py
                     lastInputNetworkAction.set(System.currentTimeMillis());
                     
                     line = line.trim();
+ 
+                    
                     if (line.length() > 0)
                     {
                         ObjectNode msg = (ObjectNode) mapper.readTree(line);
