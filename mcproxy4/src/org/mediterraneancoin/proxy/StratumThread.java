@@ -3,6 +3,7 @@ package org.mediterraneancoin.proxy;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -25,13 +26,14 @@ public class StratumThread implements Runnable {
     //static String workerName;
     //private static String workerPassword;
     
-    private long lastGetwork;
+    //private long lastGetwork;
     private long localMinDeltaTime;    
     
     final ObjectMapper mapper = new ObjectMapper();
     
     private static final ConcurrentLinkedQueue<McproxyHandler.SessionStorage> queue = new ConcurrentLinkedQueue<McproxyHandler.SessionStorage>();
     
+    private static AtomicLong lastGlobalGetwork = new AtomicLong(0);
     
     private static boolean DEBUG = true;
     private static final String prefix = "THREAD ";
@@ -63,21 +65,22 @@ public class StratumThread implements Runnable {
     
     
     
-    public void getWorkFromStratum() {
+    public void getWorkFromStratum() {  
         
-        long now = System.currentTimeMillis();
-        
-        if (now - lastGetwork < /*localMinDeltaTime*/ minDeltaTime) {
-            if (DEBUG)
-                System.out.println(prefix + "too near getWorkFromStratum, skipping; delta = " + (now - lastGetwork) + ", localMinDeltaTime=" + localMinDeltaTime);
-
-                try {
-                    Thread.sleep(/*localMinDeltaTime*/ minDeltaTime - (now - lastGetwork));
-                } catch (InterruptedException ex) {             
-                }
+        while (System.currentTimeMillis() - lastGlobalGetwork.get() < minDeltaTime) {
             
-                return;
-        }        
+            long waitTime = minDeltaTime - (System.currentTimeMillis() - lastGlobalGetwork.get());
+            waitTime = waitTime / 10;
+            if (waitTime < 10)
+                waitTime = 10;
+            
+            try {
+                Thread.sleep(/*localMinDeltaTime*/ waitTime );
+            } catch (InterruptedException ex) {             
+            }            
+        }
+        
+        lastGlobalGetwork.set(System.currentTimeMillis());
         
         if (DEBUG)
             System.out.println(prefix + "stratum work request... thread " + threadId);
@@ -195,7 +198,9 @@ public class StratumThread implements Runnable {
             System.out.println();
         }        
         
-        lastGetwork = now;
+        //lastGetwork = now;
+        
+        
         
         queue.add(storage);
         
@@ -340,16 +345,7 @@ public class StratumThread implements Runnable {
     public static void setMinDeltaTime(long minDeltaTime) {
         StratumThread.minDeltaTime = minDeltaTime;
     }
-
-
-
-    public long getLastGetwork() {
-        return lastGetwork;
-    }
-
-    public void setLastGetwork(long lastGetwork) {
-        this.lastGetwork = lastGetwork;
-    }
+ 
 
     public int getThreadId() {
         return threadId;
